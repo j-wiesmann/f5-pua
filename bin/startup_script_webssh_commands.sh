@@ -8,7 +8,7 @@
 
 export myFileName=$0
 export REMOTEUSER=root
-export WEBSSHVSIP=192.168.20.42
+export WEBSSHVSIP=
 
 # check to see if we're in /config/startup, if not add ourselves
 IN_STARTUP=`grep startup_script_webssh_commands.sh /config/startup | wc -l`
