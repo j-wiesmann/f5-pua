@@ -23,9 +23,11 @@ if [ $? -eq 0 ]; then
     IPADDRADD=$(/sbin/ip addr add $WEBSSHVSIP/32 dev tmm 2>&1)
     if [ $? -eq 0 ]; then
       # success
+      echo SUCCESS $IPADDRADD
       logger -p local0.notice -t $myFileName IPADDRADD: SUCCESS: $IPADDRADD
     else
       # failure
+      echo FAILURE $IPADDRADD
       logger -p local0.notice -t $myFileName IPADDRADD: FAILURE: $IPADDRADD
     fi
   else
