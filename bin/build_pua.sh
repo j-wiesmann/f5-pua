@@ -22,7 +22,7 @@ WEBSSHILXPLUGIN=WebSSH_plugin-test
 EPHEMERALURL=https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/BIG-IP-ILX-ephemeral_auth-current.tgz
 EPHEMERALFNAME=BIG-IP-ILX-ephemeral_auth-current.tgz
 EPHEMERALILXNAME=ephemeral_auth-0.2.8-test
-EPHEMERALILXPLUGIN=ephemeral_auth_plugin-test
+EPHEMERALILXPLUGIN=ephemeral_auth_plugin
 ILXARCHIVEDIR=/var/ilx/workspaces/Common/archive
 
 # dont try to figure it out, just ask bill@f5.com
@@ -51,7 +51,7 @@ getvip() {
     echo -n "You typed $SERVICENAME_VIP, is that correct (y/n)? "
     echo
     read -n1 YESNO
-    if [ "$SERVICENAME_VIP" == "$WEBSSH2VIP"]; then
+    if [ "$SERVICENAME_VIP" == "$WEBSSH2VIP" ]; then
       $SERVICENAME VIP can not equal WEBSSH Service VIP
       YESNO="n"
     fi
