@@ -10,10 +10,11 @@ export myFileName=$0
 export REMOTEUSER=root
 export WEBSSHVSIP=$1
 
-if [ $? -eq 0 ]; then
+if [ $1 -eq 0 ]; then
   echo Usage: $0 \<webssh2 virtual server ip\>
   echo
   echo   Example: $0 192.168.20.42
+  exit
 fi
 
 # check to see if we're in /config/startup, if not add ourselves
