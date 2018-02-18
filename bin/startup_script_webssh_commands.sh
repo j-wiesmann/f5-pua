@@ -10,7 +10,7 @@ export myFileName=$0
 export REMOTEUSER=root
 export WEBSSHVSIP=$1
 
-if [ $1 -eq 0 ]; then
+if [ $# -lt 1 ]; then
   echo Usage: $0 \<webssh2 virtual server ip\>
   echo
   echo   Example: $0 192.168.20.42
