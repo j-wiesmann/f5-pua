@@ -8,7 +8,13 @@
 
 export myFileName=$0
 export REMOTEUSER=root
-export WEBSSHVSIP=
+export WEBSSHVSIP=$1
+
+if [ $? -eq 0 ]; then
+  echo Usage: $0 \<webssh2 virtual server ip\>
+  echo
+  echo   Example: $0 192.168.20.42
+fi
 
 # check to see if we're in /config/startup, if not add ourselves
 IN_STARTUP=`grep startup_script_webssh_commands.sh /config/startup | wc -l`
@@ -17,7 +23,7 @@ if [ $IN_STARTUP -eq 0 ]; then
   logger -p local0.notice -t $myFileName Adding $0 to /config/startup and ensuring correct permissions...
   chmod 755 /config/startup
   chmod 755 /config/startup_script_webssh_commands.sh
-  echo /config/startup_script_webssh_commands.sh \& >> /config/startup
+  echo /config/startup_script_webssh_commands.sh $1 \& >> /config/startup
   echo >> /config/startup
 fi
 
