@@ -23,7 +23,7 @@ EPHEMERALURL=https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/BIG-
 EPHEMERALFNAME=BIG-IP-ILX-ephemeral_auth-current.tgz
 EPHEMERALILXNAME=ephemeral_auth-0.2.8-test
 EPHEMERALILXPLUGIN=ephemeral_auth_plugin-test
-ILXARCHIVEDIR=/var/ilx/workspaces/Common/archive/
+ILXARCHIVEDIR=/var/ilx/workspaces/Common/archive
 
 # dont try to figure it out, just ask bill@f5.com
 
@@ -62,6 +62,12 @@ getvip() {
 echo;echo
 echo -n "Preparing environment... "
 mkdir -p $WORKINGDIR
+RESULT="$?" 2>&1
+  CMD="!-1" 2>&1
+checkoutput
+
+echo "Adding directory ILX archive directory"
+mkdir -p $ILXARCHIVEDIR
 RESULT="$?" 2>&1
   CMD="!-1" 2>&1
 checkoutput
