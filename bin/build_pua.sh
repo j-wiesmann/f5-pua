@@ -206,22 +206,20 @@ RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
-RADIUS/LDAP VIPS
-
 echo -n "Creating RADIUS Proxy Service Virtual Server... "
-OUTPUT=$(tmsh create ltm virtual radius_proxy { destination $RADIUSVIP:1812 ip-protocol udp mask 255.255.255.255 profiles add { udp { } } source-address-translation { type automap } source 0.0.0.0/0 rules add { $EPHEMERALILXPLUGIN/radius_proxy }})
+OUTPUT=$(tmsh create ltm virtual radius_proxy { destination $RADIUSVIP:1812 ip-protocol udp mask 255.255.255.255 profiles add { udp { } } source-address-translation { type automap } source 0.0.0.0/0 rules { $EPHEMERALILXPLUGIN/radius_proxy }})
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
 echo -n "Creating LDAP Proxy Service Virtual Server... "
-OUTPUT=$(tmsh create ltm virtual ldap_proxy { destination $LDAPVIP:389 ip-protocol tcp mask 255.255.255.255 profiles add { tcp { } } source-address-translation { type automap } source 0.0.0.0/0 rules add { $EPHEMERALILXPLUGIN/ldap_proxy }})
+OUTPUT=$(tmsh create ltm virtual ldap_proxy { destination $LDAPVIP:389 ip-protocol tcp mask 255.255.255.255 profiles add { tcp { } } source-address-translation { type automap } source 0.0.0.0/0 rules { $EPHEMERALILXPLUGIN/ldap_proxy }})
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
 echo -n "Creating LDAPS (ssl) Proxy Service Virtual Server... "
-OUTPUT=$(tmsh create ltm virtual ldaps_proxy { destination $LDAPSVIP:636 ip-protocol tcp mask 255.255.255.255 profiles add { tcp { } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } source-address-translation { type automap } source 0.0.0.0/0 rules add { $EPHEMERALILXPLUGIN/ldap_proxy_ssl }})
+OUTPUT=$(tmsh create ltm virtual ldaps_proxy { destination $LDAPSVIP:636 ip-protocol tcp mask 255.255.255.255 profiles add { tcp { } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } source-address-translation { type automap } source 0.0.0.0/0 rules { $EPHEMERALILXPLUGIN/ldap_proxy_ssl }})
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
@@ -229,7 +227,7 @@ checkoutput
 WEBTOP VIPS
 
 echo -n "Creating Webtop Virtual Server... "
-OUTPUT=$(tmsh create ltm virtual pua_webtop { destination $WEBTOPVIP:443 ip-protocol tcp mask 255.255.255.255 profiles add { tcp { } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } source-address-translation { type automap } source 0.0.0.0/0 rules add { $EPHEMERALILXPLUGIN/APM_ephemeral_auth }})
+OUTPUT=$(tmsh create ltm virtual pua_webtop { destination $WEBTOPVIP:443 ip-protocol tcp mask 255.255.255.255 profiles add { tcp { } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } source-address-translation { type automap } source 0.0.0.0/0 rules { $EPHEMERALILXPLUGIN/APM_ephemeral_auth }})
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
