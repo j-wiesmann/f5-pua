@@ -49,8 +49,12 @@ getvip() {
     read SERVICENAME_VIP
     echo
     echo -n "You typed $SERVICENAME_VIP, is that correct (y/n)? "
-    read -n1 YESNO
     echo
+    read -n1 YESNO
+    if [ "$SERVICENAME_VIP" == "$WEBSSH2VIP"]; then
+      $SERVICENAME VIP can not equal WEBSSH Service VIP
+      YESNO="n"
+    fi
   done
   return
 }
@@ -145,8 +149,25 @@ SERVICENAME=WebSSH2
 getvip
 WEBSSH2VIP="$SERVICENAME_VIP"
 
+SERVICENAME=RADIUS
+getvip
+RADIUSVIP="$SERVICENAME_VIP"
+
+SERVICENAME=LDAP
+getvip
+LDAPVIP="$SERVICENAME_VIP"
+
+SERVICENAME=LDAPS
+getvip
+LDAPSVIP="$SERVICENAME_VIP"
+
+SERVICENAME=Webtop
+getvip
+WEBTOPVIP="$SERVICENAME_VIP"
+
+
 echo -n "Creating WEBSSH Proxy Service Virtual Server... "
-OUTPUT=$(tmsh create ltm virtual webssh_proxy { destination $WEBSSH2VIP:2222 ip-protocol tcp mask 255.255.255.255 profiles add { clientssl-insecure-compatible { context clientside } tcp { } } source 0.0.0.0/0 translate-address enabled translate-port enabled })
+OUTPUT=$(tmsh create ltm virtual webssh_proxy { destination $WEBSSH2VIP:2222 ip-protocol tcp mask 255.255.255.255 profiles add { clientssl-insecure-compatible { context clientside } tcp { } } source 0.0.0.0/0 })
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
@@ -178,6 +199,36 @@ OUTPUT=$(tmsh create ilx plugin $EPHEMERALILXPLUGIN from-workspace $EPHEMERALILX
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
+
+RADIUS/LDAP VIPS
+
+echo -n "Creating RADIUS Proxy Service Virtual Server... "
+OUTPUT=$(tmsh create ltm virtual radius_proxy { destination $RADIUSVIP:1812 ip-protocol udp mask 255.255.255.255 profiles add { udp { } } source-address-translation { type automap } source 0.0.0.0/0 rules add { $EPHEMERALILXPLUGIN/radius_proxy }})
+RESULT="$?" 2>&1
+CMD="!-1" 2>&1
+checkoutput
+
+echo -n "Creating LDAP Proxy Service Virtual Server... "
+OUTPUT=$(tmsh create ltm virtual ldap_proxy { destination $LDAPVIP:389 ip-protocol tcp mask 255.255.255.255 profiles add { tcp { } } source-address-translation { type automap } source 0.0.0.0/0 rules add { $EPHEMERALILXPLUGIN/ldap_proxy }})
+RESULT="$?" 2>&1
+CMD="!-1" 2>&1
+checkoutput
+
+echo -n "Creating LDAPS (ssl) Proxy Service Virtual Server... "
+OUTPUT=$(tmsh create ltm virtual ldaps_proxy { destination $LDAPSVIP:636 ip-protocol tcp mask 255.255.255.255 profiles add { tcp { } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } source-address-translation { type automap } source 0.0.0.0/0 rules add { $EPHEMERALILXPLUGIN/ldap_proxy_ssl }})
+RESULT="$?" 2>&1
+CMD="!-1" 2>&1
+checkoutput
+
+WEBTOP VIPS
+
+echo -n "Creating Webtop Virtual Server... "
+OUTPUT=$(tmsh create ltm virtual pua_webtop { destination $WEBTOPVIP:443 ip-protocol tcp mask 255.255.255.255 profiles add { tcp { } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } source-address-translation { type automap } source 0.0.0.0/0 rules add { $EPHEMERALILXPLUGIN/APM_ephemeral_auth }})
+RESULT="$?" 2>&1
+CMD="!-1" 2>&1
+checkoutput
+
+
 
 # SERVICNAME=Ephemeral Authentication
 # getvip
