@@ -40,11 +40,11 @@ if [ $? -eq 0 ]; then
     if [ $? -eq 0 ]; then
       # success
       echo SUCCESS $IPADDRADD
-      logger -p local0.notice -t $myFileName IPADDRADD: SUCCESS: $IPADDRADD
+      logger -p local0.notice -t $myFileName IPADDRADD: SUCCESS: $WEBSSHVSIP $IPADDRADD
     else
       # failure
       echo FAILURE $IPADDRADD
-      logger -p local0.notice -t $myFileName IPADDRADD: FAILURE: $IPADDRADD
+      logger -p local0.notice -t $myFileName IPADDRADD: FAILURE: $WEBSSHVSIP $IPADDRADD
     fi
   else
     echo FAILURE: WEBSSHVSIP not specified.
