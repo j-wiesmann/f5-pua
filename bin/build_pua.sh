@@ -49,7 +49,6 @@ getvip() {
     read SERVICENAME_VIP
     echo
     echo -n "You typed $SERVICENAME_VIP, is that correct (y/n)? "
-    echo
     read -n1 YESNO
     if [ "$SERVICENAME_VIP" == "$WEBSSH2VIP" ]; then
       $SERVICENAME VIP can not equal WEBSSH Service VIP
@@ -263,11 +262,11 @@ checkoutput
 # WEBTOP VIPS
 
 echo -n "Creating Webtop Virtual Server... "
-OUTPUT=$(tmsh create ltm virtual pua_webtop { destination $WEBTOPVIP:443 ip-protocol tcp mask 255.255.255.255 profiles add { tcp { } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } source-address-translation { type automap } source 0.0.0.0/0 rules { $EPHEMERALILXPLUGIN/APM_ephemeral_auth }})
+OUTPUT=$(tmsh create ltm virtual pua_webtop { destination $WEBTOPVIP:443 ip-protocol tcp mask 255.255.255.255 profiles add { tcp { } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } source-address-translation { type automap } source 0.0.0.0/0 })
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
-
+# rules { $EPHEMERALILXPLUGIN/APM_ephemeral_auth }
 
 # SERVICNAME=Ephemeral Authentication
 # getvip
