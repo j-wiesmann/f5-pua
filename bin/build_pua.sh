@@ -206,6 +206,42 @@ RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
+echo -n "Creating ephemeral_config data group... "
+OUTPUT=$(tmsh create ltm data-group internal ephemeral_config { records add { BINDDN { data CN=Administrator,CN=Users,DC=mydomain,DC=local } BINDPWD { data Password123 } BINDURL { data ldaps://192.168.20.230:636 } DEBUG { data 2 } DEBUG_PASSWORD { data 1 } RADIUS_SECRET { data radius_secret } RADIUS_TESTMODE { data 1 } RADIUS_TESTUSER { data f5testuser } ROTATE { data 0 } pwrulesLen { data 8 } pwrulesLwrCaseMin { data 1 } pwrulesNumbersMin { data 1 } pwrulesPunctuationMin { data 1 } pwrulesUpCaseMin { data 1 } } type string })
+RESULT="$?" 2>&1
+CMD="!-1" 2>&1
+checkoutput
+
+echo -n "Creating ephemeral_LDAP_Bypass data group... "
+OUTPUT=$(tmsh create ltm data-group internal ephemeral_LDAP_Bypass { records add { "cn=f5 service account,cn=users,dc=mydomain,dc=local" { } cn=administrator,cn=users,dc=mydomain,dc=local { } cn=proxyuser,cn=users,dc=mydomain,dc=local { } } type string })
+RESULT="$?" 2>&1
+CMD="!-1" 2>&1
+checkoutput
+
+echo -n "Creating ephemeral_RADIUS_Bypass data group... "
+OUTPUT=$(tmsh create ltm data-group internal ephemeral_RADIUS_Bypass { records add { jlpicard { } } type string })
+RESULT="$?" 2>&1
+CMD="!-1" 2>&1
+checkoutput
+
+echo -n "Creating ephemeral_radprox_host_groups data group... "
+OUTPUT=$(tmsh create ltm data-group internal ephemeral_radprox_host_groups { records add { 192.168.99.80 { data "CN=RouterEnable,CN=Users,DC=mydomain,DC=local:15;CN=RouterView,CN=Users,DC=mydomain,DC=local:1" } 192.168.99.81 { data "CN=RouterEnable,CN=Users,DC=mydomain,DC=local:15;CN=RouterView,CN=Users,DC=mydomain,DC=local:1" } 192.168.99.82 { data "CN=RouterEnable,CN=Users,DC=mydomain,DC=local:15;CN=RouterView,CN=Users,DC=mydomain,DC=local:1" } 192.168.99.83 { data "CN=RouterEnable,CN=Users,DC=mydomain,DC=local:15;CN=RouterView,CN=Users,DC=mydomain,DC=local:1" } 192.168.99.85 { data "CN=RouterEnable,CN=Users,DC=mydomain,DC=local:15;CN=RouterView,CN=Users,DC=mydomain,DC=local:1" } } type string })
+RESULT="$?" 2>&1
+CMD="!-1" 2>&1
+checkoutput
+
+echo -n "Creating ephemeral_radprox_radius_attributes data group... "
+OUTPUT=$(tmsh create ltm data-group internal ephemeral_radprox_radius_attributes { records add { BLUECOAT { data "[['Service-Type', <<<VALUE>>>]]" } CISCO { data "[['Vendor-Specific', 9, [['Cisco-AVPair', 'shell:priv-lvl=<<<VALUE>>>']]]]" } DEFAULT { data "[['Vendor-Specific', 9, [['Cisco-AVPair', 'shell:priv-lvl=<<<VALUE>>>']]]]" } F5 { data "[['Vendor-Specific', 3375, [['F5-LTM-User-Role, <<<VALUE>>>]]]]" } PALOALTO { data "[['Vendor-Specific', 25461, [['PaloAlto-Admin-Role', <<<VALUE>>>]]]]" } } type string })
+RESULT="$?" 2>&1
+CMD="!-1" 2>&1
+checkoutput
+
+echo -n "Creating ephemeral_radprox_radius_client data group... "
+OUTPUT=$(tmsh create ltm data-group internal ephemeral_radprox_radius_client { records add { 192.168.99.80 { data DEFAULT } 192.168.99.81 { data DEFAULT } 192.168.99.82 { data CISCO } 192.168.99.83 { data CISCO } 192.168.99.85 { data PALOALTO } } type string })
+RESULT="$?" 2>&1
+CMD="!-1" 2>&1
+checkoutput
+
 echo -n "Creating RADIUS Proxy Service Virtual Server... "
 OUTPUT=$(tmsh create ltm virtual radius_proxy { destination $RADIUSVIP:1812 ip-protocol udp mask 255.255.255.255 profiles add { udp { } } source-address-translation { type automap } source 0.0.0.0/0 rules { $EPHEMERALILXPLUGIN/radius_proxy }})
 RESULT="$?" 2>&1
@@ -224,14 +260,13 @@ RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
-WEBTOP VIPS
+# WEBTOP VIPS
 
 echo -n "Creating Webtop Virtual Server... "
 OUTPUT=$(tmsh create ltm virtual pua_webtop { destination $WEBTOPVIP:443 ip-protocol tcp mask 255.255.255.255 profiles add { tcp { } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } source-address-translation { type automap } source 0.0.0.0/0 rules { $EPHEMERALILXPLUGIN/APM_ephemeral_auth }})
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
-
 
 
 # SERVICNAME=Ephemeral Authentication
