@@ -29,6 +29,19 @@ MODULESREQUIRED="apm ltm ilx"
 # dont try to figure it out, just ask bill@f5.com
 DEFAULTIP=
 MGMTIP=$(ifconfig mgmt | awk '/inet addr/{print substr($2,6)}')
+read STATUS </var/prompt/ps1
+
+if [[ "$STATUS" != "Active" ]]; then
+  tput bel;tput bel;tput bel;tput bel
+  echo
+  echo "Your BIG-IP system does not appear to be in a consistent state, status reports: $STATUS"
+  echo
+  echo "Please correct the condition and try running this script again."
+  echo
+  exit 255
+fi
+
+
 checkoutput() {
   if [ $RESULT -eq 0 ]; then
     echo "[OK]"
@@ -39,7 +52,7 @@ checkoutput() {
     echo "[FAILED]"
     echo;echo;echo "Previous command failed: $CMD"
     echo;echo;echo $OUTPUT
-    exit
+    exit 255
   fi
 }
 
@@ -86,7 +99,7 @@ downloadAndCheck() {
   sha256sum -c $FNAME.sha256
   if [ $? -gt 0 ]; then
     echo "SHA256 checksum failed. Halting."
-    exit
+    exit 255
   fi
 }
 
@@ -134,6 +147,15 @@ checkProvision() {
         sleep 1
         echo -n .
         read STATUS </var/prompt/ps1
+        if [ "$STATUS" == "REBOOT REQUIRED" ]; then
+          tput bel;tput bel;tput bel;tput bel
+          echo
+          echo
+          echo "Due to provisioning requirements, a reboot of this sytems is required."
+          echo
+          echo "Please reboot the system and re-run this script to continue."
+          exit 255
+        fi
       done
       echo "[OK]"
     else
@@ -142,7 +164,7 @@ checkProvision() {
       echo "ERROR: Refusing to run until modules are provisioned. Please provision LTM APM and ILX"
       echo "and run script again."
       echo
-      exit
+      exit 255
     fi
   fi
   echo
@@ -433,3 +455,4 @@ fi
 echo "Task complete."
 echo
 echo "Now go build an APM policy for pua!"
+exit 0
