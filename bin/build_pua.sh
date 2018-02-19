@@ -11,12 +11,12 @@ shopt -s nocasematch
 
 WORKINGDIR=/tmp/pua
 
-SHASUMSURL=https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/shasums.txt
-SHASUMSFNAME=shasums.txt
+#SHASUMSURL=https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/shasums.txt
+#SHASUMSFNAME=shasums.txt
 STARTUPURL=https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/startup_script_webssh_commands.sh
 STARTUPFNAME=startup_script_webssh_commands.sh
-WEBSSHURL=https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/BIG-IP-ILX-WebSSH2-current.tgz
-WEBSSHFNAME=BIG-IP-ILX-WebSSH2-current.tgz
+WEBSSHURL=https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/BIG-IP-13.1.0.2-ILX-WebSSH2-current.tgz
+WEBSSHFNAME=BIG-IP-13.1.0.2-ILX-WebSSH2-current.tgz
 WEBSSHILXNAME=WebSSH2-0.2.0-test
 WEBSSHILXPLUGIN=WebSSH_plugin-test
 EPHEMERALURL=https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/BIG-IP-ILX-ephemeral_auth-current.tgz
@@ -77,45 +77,52 @@ RESULT="$?" 2>&1
   CMD="!-1" 2>&1
 checkoutput
 
-echo -n "Downloading $SHASUMSFNAME... "
-OUTPUT=$(curl --progress-bar $SHASUMSURL > $SHASUMSFNAME 2>&1)
-RESULT="$?" 2>&1
-  CMD="!-1" 2>&1
-checkoutput
+#echo -n "Downloading $SHASUMSFNAME... "
+#OUTPUT=$(curl --progress-bar $SHASUMSURL > $SHASUMSFNAME 2>&1)
+#RESULT="$?" 2>&1
+#CMD="!-1" 2>&1
+#checkoutput
 
-echo "Checking for $STARTUPFNAME..."
-if [ ! -f $STARTUPFNAME ]; then
-  echo -n "Downloading $STARTUPFNAME... "
-  OUTPUT=$(curl --progress-bar $STARTUPURL > $STARTUPFNAME)
-  RESULT="$?" 2>&1
-  CMD="!-1" 2>&1
-  checkoutput
-fi
+downloadAndCheck() {
+  echo "Checking for $FNAME..."
+  if [ ! -f $STARTUPFNAME ]; then
+    echo -n "Downloading $FNAME... "
+    OUTPUT=$(curl --progress-bar $URL > $FNAME)
+    RESULT="$?" 2>&1
+    CMD="!-1" 2>&1
+    checkoutput
+    echo -n "Downloading $FNAME.sha256... "
+    OUTPUT=$(curl --progress-bar $URL.sha256 > $FNAME.sha256)
+    RESULT="$?" 2>&1
+    CMD="!-1" 2>&1
+    checkoutput
+  fi
+  echo "Checking $FNAME hash..."
+  sha256sum -c $FNAME.sha256
+  if [ $? -gt 0 ]; then
+    echo "SHA256 checksum failed. Halting."
+    exit
+  fi
+}
 
-echo "Checking for $WEBSSHFNAME..."
-if [ ! -f $WEBSSHFNAME ]; then
-  echo -n "Downloading $WEBSSHFNAME... "
-  OUTPUT=$(curl --progress-bar $WEBSSHURL > $WEBSSHFNAME)
-  RESULT="$?" 2>&1
-  CMD="!-1" 2>&1
-  checkoutput
-fi
+FNAME=$STARTUPFNAME
+URL=$STARTUPURL
+downloadAndCheck
 
-echo "Checking for $EPHEMERALFNAME"
-if [ ! -f $EPHEMERALFNAME ]; then
-  echo -n "Downloading $EPHEMERALFNAME... "
-  OUTPUT=$(curl --progress-bar $EPHEMERALURL > $EPHEMERALFNAME)
-  RESULT="$?" 2>&1
-  CMD="!-1" 2>&1
-  checkoutput
-fi
+FNAME=$WEBSSHFNAME
+URL=$WEBSSHURL
+downloadAndCheck
 
-echo "Checking SHA256 signatures of downloaded files"
-sha256sum -c $SHASUMSFNAME
-if [ $? -gt 0 ]; then
-  echo "SHA256 checksum failed. Halting."
-  exit
-fi
+FNAME=$EPHEMERALFNAME
+URL=$EPHEMERALURL
+downloadAndCheck
+
+#echo "Checking SHA256 signatures of downloaded files"
+#sha256sum -c $SHASUMSFNAME
+#if [ $? -gt 0 ]; then
+#  echo "SHA256 checksum failed. Halting."
+#  exit
+#fi
 
 echo -n "Placing $STARTUPFNAME in /config... "
 OUTPUT=$(mv $STARTUPFNAME /config)
@@ -188,6 +195,12 @@ OUTPUT=$(bash /config/$STARTUPFNAME $WEBSSH2VIP)
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
+
+#echo -n "Modifying WebSSH2 Workspace config.json... "
+#OUTPUT=$(jq '.listen.ip = "0.0.0.0"' $ILXARCHIVEDIR/../$WEBSSHILXNAME/extensions/WebSSH2/config.json > $ILXARCHIVEDIR/../$WEBSSHILXNAME/extensions/WebSSH2/config.json)
+#RESULT="$?" 2>&1
+#CMD="!-1" 2>&1
+#checkoutput
 
 echo
 echo -n "Creating WebSSH2 Plugin... "
