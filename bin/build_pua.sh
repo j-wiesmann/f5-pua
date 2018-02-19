@@ -144,6 +144,13 @@ RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
+echo
+echo -n "Modifying Ephemeral Authentication Workspace... "
+OUTPUT=$(tmsh modify ilx workspace $EPHEMERALILXNAME node-version 6.9.1)
+RESULT="$?" 2>&1
+CMD="!-1" 2>&1
+checkoutput
+
 SERVICENAME=WebSSH2
 getvip
 WEBSSH2VIP="$SERVICENAME_VIP"
@@ -165,8 +172,8 @@ getvip
 WEBTOPVIP="$SERVICENAME_VIP"
 
 
-echo -n "Creating WEBSSH Proxy Service Virtual Server... "
-OUTPUT=$(tmsh create ltm virtual webssh_proxy { destination $WEBSSH2VIP:2222 ip-protocol tcp mask 255.255.255.255 profiles add { clientssl-insecure-compatible { context clientside } tcp { } } source 0.0.0.0/0 })
+echo "Creating WEBSSH Proxy Service Virtual Server... "
+OUTPUT=$(tmsh create ltm virtual webssh_proxy { destination $WEBSSH2VIP:2222 ip-protocol tcp mask 255.255.255.255 profiles add { clientssl-insecure-compatible { context clientside } tcp { } } source 0.0.0.0/0 translate-address disabled translate-port disabled })
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
@@ -191,28 +198,26 @@ checkoutput
 
 echo
 echo -n "Creating WebSSH2 Plugin... "
-# create ilx workspace new from-uri https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/BIG-IP-ILX-WebSSH2-current.tgz
-OUTPUT=$(tmsh create ilx plugin $WEBSSHILXPLUGIN from-workspace $WEBSSHILXNAME)
+OUTPUT=$(tmsh create ilx plugin $WEBSSHILXPLUGIN from-workspace $WEBSSHILXNAME extensions { webssh2 { concurrency-mode single ilx-logging enabled  } })
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
 echo
 echo -n "Creating Ephemeral Authentication Plugin... "
-# create ilx workspace new from-uri https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/BIG-IP-ILX-WebSSH2-current.tgz
-OUTPUT=$(tmsh create ilx plugin $EPHEMERALILXPLUGIN from-workspace $EPHEMERALILXNAME)
+OUTPUT=$(tmsh create ilx plugin $EPHEMERALILXPLUGIN from-workspace $EPHEMERALILXNAME extensions { ephemeral_auth { ilx-logging enabled } })
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
 echo -n "Creating ephemeral_config data group... "
-OUTPUT=$(tmsh create ltm data-group internal ephemeral_config { type string })
+OUTPUT=$(tmsh create ltm data-group internal ephemeral_config { records add { DEBUG { data 2 } DEBUG_PASSWORD { data 1 } RADIUS_SECRET { data radius_secret } RADIUS_TESTMODE { data 1 } RADIUS_TESTUSER { data testuser } ROTATE { data 0 } pwrulesLen { data 8 } pwrulesLwrCaseMin { data 1 } pwrulesNumbersMin { data 1 } pwrulesPunctuationMin { data 1 } pwrulesUpCaseMin { data 1 } } type string })
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
 echo -n "Creating ephemeral_LDAP_Bypass data group... "
-OUTPUT=$(tmsh create ltm data-group internal ephemeral_LDAP_Bypass { type string })
+OUTPUT=$(tmsh create ltm data-group internal ephemeral_LDAP_Bypass { records add { "cn=f5 service account,cn=users,dc=mydomain,dc=local" { } cn=administrator,cn=users,dc=mydomain,dc=local { } cn=proxyuser,cn=users,dc=mydomain,dc=local { } } type string })
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
@@ -229,8 +234,9 @@ RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
+
 echo -n "Creating ephemeral_radprox_radius_attributes data group... "
-OUTPUT=$(tmsh create ltm data-group internal ephemeral_radprox_radius_attributes { type string })
+OUTPUT=$(tmsh create ltm data-group internal ephemeral_radprox_radius_attributes { records add { BLUECOAT { data "[['Service-Type', <<<VALUE>>>]]" } CISCO { data "[['Vendor-Specific', 9, [['Cisco-AVPair', 'shell:priv-lvl=<<<VALUE>>>']]]]" } DEFAULT { data "[['Vendor-Specific', 9, [['Cisco-AVPair', 'shell:priv-lvl=<<<VALUE>>>']]]]" } F5 { data "[['Vendor-Specific', 3375, [['F5-LTM-User-Role, <<<VALUE>>>]]]]" } PALOALTO { data "[['Vendor-Specific', 25461, [['PaloAlto-Admin-Role', <<<VALUE>>>]]]]" } } type string })
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
@@ -261,14 +267,28 @@ checkoutput
 
 # WEBTOP VIPS
 
-echo -n "Creating Webtop Virtual Server... "
-OUTPUT=$(tmsh create ltm virtual pua_webtop { destination $WEBTOPVIP:443 ip-protocol tcp mask 255.255.255.255 profiles add { tcp { } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } source-address-translation { type automap } source 0.0.0.0/0 })
+echo -n "APM pua Policy..."
+echo 'proc script::run {} {' > $WORKINGDIR/policy.tcl
+echo '  tmsh::begin_transaction' >> $WORKINGDIR/policy.tcl
+echo '  tmsh::create /apm policy agent ending-allow /Common/pua_end_allow_ag { }' >> $WORKINGDIR/policy.tcl
+echo '  tmsh::create /apm policy agent ending-deny /Common/pua_end_deny_ag { }' >> $WORKINGDIR/policy.tcl
+echo '  tmsh::create /apm policy agent ending-deny /Common/pua_end_deny2_ag { }' >> $WORKINGDIR/policy.tcl
+echo '  tmsh::create /apm policy policy-item /Common/pua_end_allow { agents add { /Common/pua_end_allow_ag { type ending-allow } } caption Allow color 1 item-type ending }' >> $WORKINGDIR/policy.tcl
+echo '  tmsh::create /apm policy policy-item /Common/pua_end_deny { agents add { /Common/pua_end_deny_ag { type ending-deny } } caption Deny color 2 item-type ending }' >> $WORKINGDIR/policy.tcl
+echo '  tmsh::create /apm policy policy-item /Common/pua_end_deny2 { agents add { /Common/pua_end_deny2_ag { type ending-deny } } caption Deny2 color 4 item-type ending }' >> $WORKINGDIR/policy.tcl
+echo '  tmsh::create /apm policy policy-item /Common/pua_ent { caption Start color 1 rules { { caption fallback next-item /Common/pua_end_deny } } }' >> $WORKINGDIR/policy.tcl
+echo '  tmsh::create /apm policy access-policy /Common/pua { default-ending /Common/pua_end_deny items add { pua_end_allow { } pua_end_deny { } pua_end_deny2 { } pua_ent { } } start-item pua_ent }' >> $WORKINGDIR/policy.tcl
+echo '  tmsh::create /apm profile access /Common/pua { accept-languages add { en } access-policy /Common/pua}' >> $WORKINGDIR/policy.tcl
+echo '  tmsh::create /apm profile connectivity pua-connectivity defaults-from connectivity' >> $WORKINGDIR/policy.tcl
+echo '  tmsh::commit_transaction' >> $WORKINGDIR/policy.tcl
+echo '  }'  >> $WORKINGDIR/policy.tcl
+OUTPUT=$(tmsh run cli script file $WORKINGDIR/policy.tcl)
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
-# rules { $EPHEMERALILXPLUGIN/APM_ephemeral_auth }
 
-# SERVICNAME=Ephemeral Authentication
-# getvip
-# EPHEMERALVIP="$SERVICENAME_VIP"
-
+echo -n "Creating Webtop Virtual Server... "
+OUTPUT=$(tmsh create ltm virtual pua_webtop { destination $WEBTOPVIP:443 ip-protocol tcp mask 255.255.255.255 profiles add { http pua pua-conectivity rewrite-portal tcp { } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } source-address-translation { type automap } rules { $EPHEMERALILXPLUGIN/APM_ephemeral_auth } source 0.0.0.0/0 })
+RESULT="$?" 2>&1
+CMD="!-1" 2>&1
+checkoutput
