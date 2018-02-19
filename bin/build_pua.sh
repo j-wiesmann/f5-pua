@@ -58,31 +58,6 @@ getvip() {
   return
 }
 
-echo;echo
-echo -n "Preparing environment... "
-mkdir -p $WORKINGDIR
-RESULT="$?" 2>&1
-  CMD="!-1" 2>&1
-checkoutput
-
-echo "Adding directory ILX archive directory"
-mkdir -p $ILXARCHIVEDIR
-RESULT="$?" 2>&1
-  CMD="!-1" 2>&1
-checkoutput
-
-echo -n "Changing to $WORKINGDIR... "
-cd $WORKINGDIR
-RESULT="$?" 2>&1
-  CMD="!-1" 2>&1
-checkoutput
-
-#echo -n "Downloading $SHASUMSFNAME... "
-#OUTPUT=$(curl --progress-bar $SHASUMSURL > $SHASUMSFNAME 2>&1)
-#RESULT="$?" 2>&1
-#CMD="!-1" 2>&1
-#checkoutput
-
 downloadAndCheck() {
   echo "Checking for $FNAME..."
   if [ ! -f $FNAME ]; then
@@ -105,6 +80,25 @@ downloadAndCheck() {
   fi
 }
 
+echo;echo
+echo -n "Preparing environment... "
+mkdir -p $WORKINGDIR
+RESULT="$?" 2>&1
+  CMD="!-1" 2>&1
+checkoutput
+
+echo "Adding directory ILX archive directory"
+mkdir -p $ILXARCHIVEDIR
+RESULT="$?" 2>&1
+  CMD="!-1" 2>&1
+checkoutput
+
+echo -n "Changing to $WORKINGDIR... "
+cd $WORKINGDIR
+RESULT="$?" 2>&1
+  CMD="!-1" 2>&1
+checkoutput
+
 FNAME=$STARTUPFNAME
 URL=$STARTUPURL
 downloadAndCheck
@@ -116,13 +110,6 @@ downloadAndCheck
 FNAME=$EPHEMERALFNAME
 URL=$EPHEMERALURL
 downloadAndCheck
-
-#echo "Checking SHA256 signatures of downloaded files"
-#sha256sum -c $SHASUMSFNAME
-#if [ $? -gt 0 ]; then
-#  echo "SHA256 checksum failed. Halting."
-#  exit
-#fi
 
 echo -n "Placing $STARTUPFNAME in /config... "
 OUTPUT=$(mv $STARTUPFNAME /config)
