@@ -53,7 +53,7 @@ getvip() {
       echo -n "Type the IP address of your $SERVICENAME service virtual server and press ENTER [$DEFAULTIP]: "
     fi
     read SERVICENAME_VIP
-    if [ "$SERVICENAME_VIP" == ""] && ["$DEFAULTIP" != ""]; then
+    if [[ ("$SERVICENAME_VIP" == "") && ("$DEFAULTIP" != "") ]]; then
       SERVICENAME_VIP = $DEFAULTIP
     fi
     echo
