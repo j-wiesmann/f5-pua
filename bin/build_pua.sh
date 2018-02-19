@@ -22,7 +22,6 @@ EPHEMERALFNAME=BIG-IP-ILX-ephemeral_auth-current.tgz
 EPHEMERALILXNAME=ephemeral_auth-0.2.8-test
 EPHEMERALILXPLUGIN=ephemeral_auth_plugin
 ILXARCHIVEDIR=/var/ilx/workspaces/Common/archive
-POLICYNAME=pua
 PROVLEVEL=nominal
 MODULESREQUIRED="apm ltm ilx"
 
@@ -183,14 +182,14 @@ checkProvision() {
   echo
 }
 
-checkProvision
-
 echo;echo
 echo -n "Preparing environment... "
 mkdir -p $WORKINGDIR
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
+
+checkProvision
 
 echo
 echo "Adding directory ILX archive directory"
@@ -392,20 +391,20 @@ CMD="!-1" 2>&1
 checkoutput
 
 echo
-echo -n "Creating $POLICYNAME APM Policy..."
+echo -n "Creating pua APM Policy..."
 cat >$WORKINGDIR/policy.tcl<<EOF
 proc script::run {} {
   tmsh::begin_transaction
-  tmsh::create /apm policy agent ending-allow /Common/$POLICYNAME_end_allow_ag { }
-  tmsh::create /apm policy agent ending-deny /Common/$POLICYNAME_end_deny_ag { }
-  tmsh::create /apm policy agent ending-deny /Common/$POLICYNAME_end_deny2_ag { }
-  tmsh::create /apm policy policy-item /Common/$POLICYNAME_end_allow { agents add { /Common/$POLICYNAME_end_allow_ag { type ending-allow } } caption Allow color 1 item-type ending }
-  tmsh::create /apm policy policy-item /Common/$POLICYNAME_end_deny { agents add { /Common/$POLICYNAME_end_deny_ag { type ending-deny } } caption Deny color 2 item-type ending }
-  tmsh::create /apm policy policy-item /Common/$POLICYNAME_end_deny2 { agents add { /Common/$POLICYNAME_end_deny2_ag { type ending-deny } } caption Deny2 color 4 item-type ending }
-  tmsh::create /apm policy policy-item /Common/$POLICYNAME_ent { caption Start color 1 rules { { caption fallback next-item /Common/$POLICYNAME_end_deny } } }
-  tmsh::create /apm policy access-policy /Common/$POLICYNAME { default-ending /Common/$POLICYNAME_end_deny items add { $POLICYNAME_end_allow { } $POLICYNAME_end_deny { } $POLICYNAME_end_deny2 { } $POLICYNAME_ent { } } start-item $POLICYNAME_ent }
-  tmsh::create /apm profile access /Common/$POLICYNAME { accept-languages add { en } access-policy /Common/$POLICYNAME}
-  tmsh::create /apm profile connectivity $POLICYNAME-connectivity defaults-from connectivity
+  tmsh::create /apm policy agent ending-allow /Common/pua_end_allow_ag { }
+  tmsh::create /apm policy agent ending-deny /Common/pua_end_deny_ag { }
+  tmsh::create /apm policy agent ending-deny /Common/pua_end_deny2_ag { }
+  tmsh::create /apm policy policy-item /Common/pua_end_allow { agents add { /Common/pua_end_allow_ag { type ending-allow } } caption Allow color 1 item-type ending }
+  tmsh::create /apm policy policy-item /Common/pua_end_deny { agents add { /Common/pua_end_deny_ag { type ending-deny } } caption Deny color 2 item-type ending }
+  tmsh::create /apm policy policy-item /Common/pua_end_deny2 { agents add { /Common/pua_end_deny2_ag { type ending-deny } } caption Deny2 color 4 item-type ending }
+  tmsh::create /apm policy policy-item /Common/pua_ent { caption Start color 1 rules { { caption fallback next-item /Common/pua_end_deny } } }
+  tmsh::create /apm policy access-policy /Common/pua { default-ending /Common/pua_end_deny items add { pua_end_allow { } pua_end_deny { } pua_end_deny2 { } pua_ent { } } start-item pua_ent }
+  tmsh::create /apm profile access /Common/pua { accept-languages add { en } access-policy /Common/pua}
+  tmsh::create /apm profile connectivity pua-connectivity defaults-from connectivity
   tmsh::commit_transaction
 }
 EOF
@@ -415,7 +414,7 @@ CMD="!-1" 2>&1
 checkoutput
 
 echo -n "Creating Webtop Virtual Server... "
-OUTPUT=$(tmsh create ltm virtual pua_webtop { destination $WEBTOPVIP:443 ip-protocol tcp mask 255.255.255.255 profiles add { http $POLICYNAME rewrite-portal tcp { } $POLICYNAME-connectivity { context clientside } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } source-address-translation { type automap } rules { $EPHEMERALILXPLUGIN/APM_ephemeral_auth } source 0.0.0.0/0 })
+OUTPUT=$(tmsh create ltm virtual pua_webtop { destination $WEBTOPVIP:443 ip-protocol tcp mask 255.255.255.255 profiles add { http pua rewrite-portal tcp { } pua-connectivity { context clientside } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } source-address-translation { type automap } rules { $EPHEMERALILXPLUGIN/APM_ephemeral_auth } source 0.0.0.0/0 })
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
@@ -467,7 +466,15 @@ RADIUS
   echo
 fi
 
+echo -n "Saving config... "
+OUTPUT=$(tmsh save /sys config)
+RESULT="$?" 2>&1
+CMD="!-1" 2>&1
+checkoutput
+
 echo "Task complete."
 echo
 echo "Now go build an APM policy for pua!"
+
+
 exit 0
