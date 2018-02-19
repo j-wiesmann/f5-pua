@@ -27,7 +27,7 @@ ILXARCHIVEDIR=/var/ilx/workspaces/Common/archive
 
 # dont try to figure it out, just ask bill@f5.com
 DEFAULTIP=
-
+MGMTIP=$(ifconfig mgmt | awk '/inet addr/{print substr($2,6)}')
 checkoutput() {
   if [ $RESULT -eq 0 ]; then
     echo "[OK]"
@@ -57,7 +57,7 @@ getvip() {
       SERVICENAME_VIP=$DEFAULTIP
     fi
     echo
-    echo -n "You typed $SERVICENAME_VIP, is that correct (y/n)? "
+    echo -n "You typed $SERVICENAME_VIP, is that correct (Y/n)? "
     read -n1 YESNO
     if [ "$SERVICENAME_VIP" == "$WEBSSH2VIP" ]; then
       echo $SERVICENAME VIP must not equal WEBSSH Service VIP
@@ -232,7 +232,8 @@ getvip
 WEBTOPVIP="$SERVICENAME_VIP"
 DEFAULTIP=$SERVICENAME_VIP
 
-echo "Creating WEBSSH Proxy Service Virtual Server... "
+echo;echo
+echo -n "Creating WEBSSH Proxy Service Virtual Server... "
 OUTPUT=$(tmsh create ltm virtual webssh_proxy { destination $WEBSSH2VIP:2222 ip-protocol tcp mask 255.255.255.255 profiles add { clientssl-insecure-compatible { context clientside } tcp { } } source 0.0.0.0/0 translate-address disabled translate-port disabled })
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
@@ -319,3 +320,36 @@ OUTPUT=$(tmsh create ltm virtual pua_webtop { destination $WEBTOPVIP:443 ip-prot
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
+
+echo
+echo -n "Do you want to configure this BIG-IP to authenticate against itself for testing purposes (Y/n)? "
+echo -n "You typed $SERVICENAME_VIP, is that correct (Y/n)? "
+read -n1 YESNO
+if [ "$YESNO" != "n" ]; then
+  echo;echo
+  echo -n "Creating RADIUS Configuration... "
+  echo 'proc script::run {} {' > $WORKINGDIR/radius.tcl
+  echo '  tmsh::begin_transaction' >> $WORKINGDIR/radius.tcl
+  echo "  tmsh::create /auth radius-server system_auth_name1 { secret radius_secret server $RADIUSVIP }" >> $WORKINGDIR/radius.tcl
+  echo '  tmsh::create /auth radius system-auth { servers { system_auth_name1 } }' >> $WORKINGDIR/radius.tcl
+  echo '  tmsh::create /auth remote-user { default-role guest remote-console-access tmsh }' >> $WORKINGDIR/radius.tcl
+  echo '  tmsh::create /auth source { type radius }' >> $WORKINGDIR/radius.tcl
+  echo '  tmsh::commit_transaction' >> $WORKINGDIR/radius.tcl
+  echo '}' >> $WORKINGDIR/radius.tcl
+  OUTPUT=$(tmsh run cli script file $WORKINGDIR/radius.tcl)
+  RESULT="$?" 2>&1
+  CMD="!-1" 2>&1
+  checkoutput
+  echo;echo
+  echo "You can test your new configuration now by browsing to:"
+  echo
+  echo "  https://$WEBSSH2VIP:2222/ssh/host/$MGMTIP"
+  echo
+  echo "  username: testuser"
+  echo "  password: anypassword"
+  echo
+fi
+
+echo "Task complete."
+echo
+echo "Now go build an APM policy for pua!"
