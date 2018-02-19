@@ -78,11 +78,13 @@ getvip() {
       tput bel;tput bel;tput bel;tput bel;
       echo ERROR: $SERVICENAME VIP must not equal WEBSSH Service VIP
       YESNO="n"
+      echo
     else
+      echo -n "Checking IP... "
       OUTPUT=$(ping -c 1 $SERVICENAME_VIP) 2>&1
       if [[ $? -eq 0 ]]; then
         tput bel;tput bel;tput bel;tput bel;
-        echo
+        echo "[FAILED]"
         echo
         echo "ERROR: IP address $SERVICENAME_VIP appears to be taken by another host on the network already."
         echo
@@ -91,6 +93,8 @@ getvip() {
         echo "Pick a different host or investigate the issue."
         echo
         YESNO="n"
+      else
+        echo "[OK]"
       fi
     fi
   done
@@ -206,18 +210,18 @@ RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
+echo
+echo -n "Changing to $WORKINGDIR... "
+cd $WORKINGDIR
+RESULT="$?" 2>&1
+CMD="!-1" 2>&1
+checkoutput
+
 checkProvision
 
 echo
 echo "Adding directory ILX archive directory"
 mkdir -p $ILXARCHIVEDIR
-RESULT="$?" 2>&1
-CMD="!-1" 2>&1
-checkoutput
-
-echo
-echo -n "Changing to $WORKINGDIR... "
-cd $WORKINGDIR
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
