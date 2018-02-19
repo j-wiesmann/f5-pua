@@ -181,6 +181,8 @@ checkProvision() {
   echo
 }
 
+checkProvision
+
 echo;echo
 echo -n "Preparing environment... "
 mkdir -p $WORKINGDIR
