@@ -329,13 +329,13 @@ if [ "$YESNO" != "n" ]; then
   echo;echo
   echo -n "Creating RADIUS Configuration... "
   echo 'proc script::run {} {' > $WORKINGDIR/radius.tcl
-  echo '  tmsh::begin_transaction
-  echo "  tmsh::create /auth radius-server system_auth_name1 secret radius_secret server 192.168.20.53" >> $WORKINGDIR/radius.tcl
+  echo '  tmsh::begin_transaction' >> $WORKINGDIR/radius.tcl
+  echo "  tmsh::create /auth radius-server system_auth_name1 secret radius_secret server $RADIUSVIP" >> $WORKINGDIR/radius.tcl
   echo '  tmsh::create /auth radius system-auth { servers add { system_auth_name1 } }' >> $WORKINGDIR/radius.tcl
   echo '  tmsh::modify /auth remote-user default-role guest remote-console-access tmsh' >> $WORKINGDIR/radius.tcl
   echo '  tmsh::modify /auth source type radius' >> $WORKINGDIR/radius.tcl
   echo '  tmsh::commit_transaction' >> $WORKINGDIR/radius.tcl
-  echo '}' >> $WORKINGDIR/radius.tcl
+  echo '}' >> $WORKINGDIR/radius.tcl >> $WORKINGDIR/radius.tcl
   OUTPUT=$(tmsh run cli script file $WORKINGDIR/radius.tcl)
   RESULT="$?" 2>&1
   CMD="!-1" 2>&1
