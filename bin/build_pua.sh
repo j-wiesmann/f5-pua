@@ -26,6 +26,7 @@ EPHEMERALILXPLUGIN=ephemeral_auth_plugin
 ILXARCHIVEDIR=/var/ilx/workspaces/Common/archive
 
 # dont try to figure it out, just ask bill@f5.com
+DEFAULTIP=
 
 checkoutput() {
   if [ $RESULT -eq 0 ]; then
@@ -52,7 +53,7 @@ getvip() {
       echo -n "Type the IP address of your $SERVICENAME service virtual server and press ENTER [$DEFAULTIP]: "
     fi
     read SERVICENAME_VIP
-    if [ "$SERVICENAME_VIP" == ""] && ["$DEFAULTIP" -ne ""]; then
+    if [ "$SERVICENAME_VIP" == ""] && ["$DEFAULTIP" != ""]; then
       SERVICENAME_VIP = $DEFAULTIP
     fi
     echo
