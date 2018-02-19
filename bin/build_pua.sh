@@ -60,7 +60,7 @@ getvip() {
     echo -n "You typed $SERVICENAME_VIP, is that correct (y/n)? "
     read -n1 YESNO
     if [ "$SERVICENAME_VIP" == "$WEBSSH2VIP" ]; then
-      $SERVICENAME VIP must not equal WEBSSH Service VIP
+      echo $SERVICENAME VIP must not equal WEBSSH Service VIP
       YESNO="n"
     fi
   done
@@ -96,12 +96,14 @@ RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
+echo
 echo "Adding directory ILX archive directory"
 mkdir -p $ILXARCHIVEDIR
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
+echo
 echo -n "Changing to $WORKINGDIR... "
 cd $WORKINGDIR
 RESULT="$?" 2>&1
@@ -120,20 +122,65 @@ FNAME=$EPHEMERALFNAME
 URL=$EPHEMERALURL
 downloadAndCheck
 
+echo
 echo -n "Placing $STARTUPFNAME in /config... "
 OUTPUT=$(mv $STARTUPFNAME /config)
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
+echo
 echo -n "Placing $WEBSSHFNAME in $ILXARCHIVEDIR... "
 OUTPUT=$(mv $WORKINGDIR/$WEBSSHFNAME $ILXARCHIVEDIR/$WEBSSHFNAME)
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
+echo
 echo -n "Placing $EPHEMERALFNAME in $ILXARCHIVEDIR... "
 OUTPUT=$(mv $WORKINGDIR/$EPHEMERALFNAME $ILXARCHIVEDIR/$EPHEMERALFNAME)
+RESULT="$?" 2>&1
+CMD="!-1" 2>&1
+checkoutput
+
+echo
+echo -n "Creating ephemeral_config data group... "
+OUTPUT=$(tmsh create ltm data-group internal ephemeral_config { records add { DEBUG { data 2 } DEBUG_PASSWORD { data 1 } RADIUS_SECRET { data radius_secret } RADIUS_TESTMODE { data 1 } RADIUS_TESTUSER { data testuser } ROTATE { data 0 } pwrulesLen { data 8 } pwrulesLwrCaseMin { data 1 } pwrulesNumbersMin { data 1 } pwrulesPunctuationMin { data 1 } pwrulesUpCaseMin { data 1 } } type string })
+RESULT="$?" 2>&1
+CMD="!-1" 2>&1
+checkoutput
+
+echo
+echo -n "Creating ephemeral_LDAP_Bypass data group... "
+OUTPUT=$(tmsh create ltm data-group internal ephemeral_LDAP_Bypass { records add { "cn=f5 service account,cn=users,dc=mydomain,dc=local" { } cn=administrator,cn=users,dc=mydomain,dc=local { } cn=proxyuser,cn=users,dc=mydomain,dc=local { } } type string })
+RESULT="$?" 2>&1
+CMD="!-1" 2>&1
+checkoutput
+
+echo
+echo -n "Creating ephemeral_RADIUS_Bypass data group... "
+OUTPUT=$(tmsh create ltm data-group internal ephemeral_RADIUS_Bypass { type string })
+RESULT="$?" 2>&1
+CMD="!-1" 2>&1
+checkoutput
+
+echo
+echo -n "Creating ephemeral_radprox_host_groups data group... "
+OUTPUT=$(tmsh create ltm data-group internal ephemeral_radprox_host_groups { type string })
+RESULT="$?" 2>&1
+CMD="!-1" 2>&1
+checkoutput
+
+echo
+echo -n "Creating ephemeral_radprox_radius_attributes data group... "
+OUTPUT=$(tmsh create ltm data-group internal ephemeral_radprox_radius_attributes { records add { BLUECOAT { data "[['Service-Type', <<<VALUE>>>]]" } CISCO { data "[['Vendor-Specific', 9, [['Cisco-AVPair', 'shell:priv-lvl=<<<VALUE>>>']]]]" } DEFAULT { data "[['Vendor-Specific', 9, [['Cisco-AVPair', 'shell:priv-lvl=<<<VALUE>>>']]]]" } F5 { data "[['Vendor-Specific', 3375, [['F5-LTM-User-Role, <<<VALUE>>>]]]]" } PALOALTO { data "[['Vendor-Specific', 25461, [['PaloAlto-Admin-Role', <<<VALUE>>>]]]]" } } type string })
+RESULT="$?" 2>&1
+CMD="!-1" 2>&1
+checkoutput
+
+echo
+echo -n "Creating ephemeral_radprox_radius_client data group... "
+OUTPUT=$(tmsh create ltm data-group internal ephemeral_radprox_radius_client { type string })
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
@@ -223,55 +270,21 @@ RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
-echo -n "Creating ephemeral_config data group... "
-OUTPUT=$(tmsh create ltm data-group internal ephemeral_config { records add { DEBUG { data 2 } DEBUG_PASSWORD { data 1 } RADIUS_SECRET { data radius_secret } RADIUS_TESTMODE { data 1 } RADIUS_TESTUSER { data testuser } ROTATE { data 0 } pwrulesLen { data 8 } pwrulesLwrCaseMin { data 1 } pwrulesNumbersMin { data 1 } pwrulesPunctuationMin { data 1 } pwrulesUpCaseMin { data 1 } } type string })
-RESULT="$?" 2>&1
-CMD="!-1" 2>&1
-checkoutput
-
-echo -n "Creating ephemeral_LDAP_Bypass data group... "
-OUTPUT=$(tmsh create ltm data-group internal ephemeral_LDAP_Bypass { records add { "cn=f5 service account,cn=users,dc=mydomain,dc=local" { } cn=administrator,cn=users,dc=mydomain,dc=local { } cn=proxyuser,cn=users,dc=mydomain,dc=local { } } type string })
-RESULT="$?" 2>&1
-CMD="!-1" 2>&1
-checkoutput
-
-echo -n "Creating ephemeral_RADIUS_Bypass data group... "
-OUTPUT=$(tmsh create ltm data-group internal ephemeral_RADIUS_Bypass { type string })
-RESULT="$?" 2>&1
-CMD="!-1" 2>&1
-checkoutput
-
-echo -n "Creating ephemeral_radprox_host_groups data group... "
-OUTPUT=$(tmsh create ltm data-group internal ephemeral_radprox_host_groups { type string })
-RESULT="$?" 2>&1
-CMD="!-1" 2>&1
-checkoutput
-
-
-echo -n "Creating ephemeral_radprox_radius_attributes data group... "
-OUTPUT=$(tmsh create ltm data-group internal ephemeral_radprox_radius_attributes { records add { BLUECOAT { data "[['Service-Type', <<<VALUE>>>]]" } CISCO { data "[['Vendor-Specific', 9, [['Cisco-AVPair', 'shell:priv-lvl=<<<VALUE>>>']]]]" } DEFAULT { data "[['Vendor-Specific', 9, [['Cisco-AVPair', 'shell:priv-lvl=<<<VALUE>>>']]]]" } F5 { data "[['Vendor-Specific', 3375, [['F5-LTM-User-Role, <<<VALUE>>>]]]]" } PALOALTO { data "[['Vendor-Specific', 25461, [['PaloAlto-Admin-Role', <<<VALUE>>>]]]]" } } type string })
-RESULT="$?" 2>&1
-CMD="!-1" 2>&1
-checkoutput
-
-echo -n "Creating ephemeral_radprox_radius_client data group... "
-OUTPUT=$(tmsh create ltm data-group internal ephemeral_radprox_radius_client { type string })
-RESULT="$?" 2>&1
-CMD="!-1" 2>&1
-checkoutput
-
+echo
 echo -n "Creating RADIUS Proxy Service Virtual Server... "
 OUTPUT=$(tmsh create ltm virtual radius_proxy { destination $RADIUSVIP:1812 ip-protocol udp mask 255.255.255.255 profiles add { udp { } } source-address-translation { type automap } source 0.0.0.0/0 rules { $EPHEMERALILXPLUGIN/radius_proxy }})
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
+echo
 echo -n "Creating LDAP Proxy Service Virtual Server... "
 OUTPUT=$(tmsh create ltm virtual ldap_proxy { destination $LDAPVIP:389 ip-protocol tcp mask 255.255.255.255 profiles add { tcp { } } source-address-translation { type automap } source 0.0.0.0/0 rules { $EPHEMERALILXPLUGIN/ldap_proxy }})
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
+echo
 echo -n "Creating LDAPS (ssl) Proxy Service Virtual Server... "
 OUTPUT=$(tmsh create ltm virtual ldaps_proxy { destination $LDAPSVIP:636 ip-protocol tcp mask 255.255.255.255 profiles add { tcp { } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } source-address-translation { type automap } source 0.0.0.0/0 rules { $EPHEMERALILXPLUGIN/ldap_proxy_ssl }})
 RESULT="$?" 2>&1
@@ -280,7 +293,8 @@ checkoutput
 
 # WEBTOP VIPS
 
-echo -n "APM pua Policy..."
+echo
+echo -n "Creating pua APM Policy..."
 echo 'proc script::run {} {' > $WORKINGDIR/policy.tcl
 echo '  tmsh::begin_transaction' >> $WORKINGDIR/policy.tcl
 echo '  tmsh::create /apm policy agent ending-allow /Common/pua_end_allow_ag { }' >> $WORKINGDIR/policy.tcl
