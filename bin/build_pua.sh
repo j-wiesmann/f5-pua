@@ -141,8 +141,19 @@ checkProvision() {
       echo '  tmsh::commit_transaction' >> $WORKINGDIR/provision.tcl
       echo '}' >> $WORKINGDIR/provision.tcl
       tmsh run cli script file $WORKINGDIR/provision.tcl
+      RESULT="$?" 2>&1
+      CMD="!-1" 2>&1
+      checkoutput
       sleep 10
+      echo
+      echo -n "Saving config "
+      tmsh save /sys config
+      RESULT="$?" 2>&1
+      CMD="!-1" 2>&1
+      checkoutput
       STATUS=
+      echo
+      echo -n "Waiting for provisioning to quiesce "
       while [[ "$STATUS" != "Active" ]]; do
         sleep 1
         echo -n .
