@@ -5,6 +5,8 @@
 #
 # Bill Church - bill@f5.com
 #
+# v1.0 - 20180219 - Initial Release
+
 clear
 
 shopt -s nocasematch
