@@ -11,8 +11,6 @@ shopt -s nocasematch
 
 WORKINGDIR=/tmp/pua
 
-#SHASUMSURL=https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/shasums.txt
-#SHASUMSFNAME=shasums.txt
 STARTUPURL=https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/startup_script_webssh_commands.sh
 STARTUPFNAME=startup_script_webssh_commands.sh
 WEBSSHURL=https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/BIG-IP-13.1.0.2-ILX-WebSSH2-current.tgz
@@ -24,6 +22,9 @@ EPHEMERALFNAME=BIG-IP-ILX-ephemeral_auth-current.tgz
 EPHEMERALILXNAME=ephemeral_auth-0.2.8-test
 EPHEMERALILXPLUGIN=ephemeral_auth_plugin
 ILXARCHIVEDIR=/var/ilx/workspaces/Common/archive
+POLICYNAME=pua
+PROVLEVEL=nominal
+MODULESREQUIRED="apm ltm ilx"
 
 # dont try to figure it out, just ask bill@f5.com
 DEFAULTIP=
@@ -87,6 +88,64 @@ downloadAndCheck() {
     echo "SHA256 checksum failed. Halting."
     exit
   fi
+}
+
+checkProvision() {
+  MISSINGMOD=""
+  echo;echo
+  echo "Checking modules are provisioned."
+  echo
+  for i in $MODULESREQUIRED; do
+    echo -n "Checking $i... "
+    OUTPUT=$(tmsh list sys provision $i one-line|awk '{print $6}')
+    if [ "$OUTPUT" == "" ]; then
+      echo "[FAILED]"
+      echo
+      MISSINGMOD+="$i "
+    else
+      echo "OK"
+      echo
+    fi
+  done
+  if [ "$MISSINGMOD" == "" ]; then
+    echo "SUCCESS: All modules provisioned."
+  else
+    echo "Modules: $MISSINGMOD are not provisioned."
+    tput bel;tput bel
+    echo
+    echo "$MISSINGMOD will be provisioned to the level of $PROVLEVEL"
+    echo
+    echo -n "Would you like to provision them (Y/n)? "
+    read -n1 YESNO
+    if [ "$YESNO" != "n" ]; then
+      echo
+      echo -n "Provisioning "
+      echo 'proc script::run {} {' > $WORKINGDIR/provision.tcl
+      echo '  tmsh::begin_transaction' >> $WORKINGDIR/provision.tcl
+      for i in $MISSINGMOD; do
+        echo "  tmsh::modify /sys provision $i level $PROVLEVEL" >> $WORKINGDIR/provision.tcl
+      done
+      echo '  tmsh::commit_transaction' >> $WORKINGDIR/provision.tcl
+      echo '}' >> $WORKINGDIR/provision.tcl
+      tmsh run cli script file $WORKINGDIR/provision.tcl
+      sleep 10
+      STATUS=
+      while [[ "$STATUS" != "Active" ]]; do
+        sleep 1
+        echo -n .
+        read STATUS </var/prompt/ps1
+      done
+      echo "[OK]"
+    else
+      tput bel;tput bel;tput bel;tput bel
+      echo;echo
+      echo "ERROR: Refusing to run until modules are provisioned. Please provision LTM APM and ILX"
+      echo "and run script again."
+      echo
+      exit
+    fi
+  fi
+  echo
 }
 
 echo;echo
@@ -295,31 +354,31 @@ RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
-# WEBTOP VIPS
-
 echo
-echo -n "Creating pua APM Policy..."
-echo 'proc script::run {} {' > $WORKINGDIR/policy.tcl
-echo '  tmsh::begin_transaction' >> $WORKINGDIR/policy.tcl
-echo '  tmsh::create /apm policy agent ending-allow /Common/pua_end_allow_ag { }' >> $WORKINGDIR/policy.tcl
-echo '  tmsh::create /apm policy agent ending-deny /Common/pua_end_deny_ag { }' >> $WORKINGDIR/policy.tcl
-echo '  tmsh::create /apm policy agent ending-deny /Common/pua_end_deny2_ag { }' >> $WORKINGDIR/policy.tcl
-echo '  tmsh::create /apm policy policy-item /Common/pua_end_allow { agents add { /Common/pua_end_allow_ag { type ending-allow } } caption Allow color 1 item-type ending }' >> $WORKINGDIR/policy.tcl
-echo '  tmsh::create /apm policy policy-item /Common/pua_end_deny { agents add { /Common/pua_end_deny_ag { type ending-deny } } caption Deny color 2 item-type ending }' >> $WORKINGDIR/policy.tcl
-echo '  tmsh::create /apm policy policy-item /Common/pua_end_deny2 { agents add { /Common/pua_end_deny2_ag { type ending-deny } } caption Deny2 color 4 item-type ending }' >> $WORKINGDIR/policy.tcl
-echo '  tmsh::create /apm policy policy-item /Common/pua_ent { caption Start color 1 rules { { caption fallback next-item /Common/pua_end_deny } } }' >> $WORKINGDIR/policy.tcl
-echo '  tmsh::create /apm policy access-policy /Common/pua { default-ending /Common/pua_end_deny items add { pua_end_allow { } pua_end_deny { } pua_end_deny2 { } pua_ent { } } start-item pua_ent }' >> $WORKINGDIR/policy.tcl
-echo '  tmsh::create /apm profile access /Common/pua { accept-languages add { en } access-policy /Common/pua}' >> $WORKINGDIR/policy.tcl
-echo '  tmsh::create /apm profile connectivity pua-connectivity defaults-from connectivity' >> $WORKINGDIR/policy.tcl
-echo '  tmsh::commit_transaction' >> $WORKINGDIR/policy.tcl
-echo '  }'  >> $WORKINGDIR/policy.tcl
+echo -n "Creating $POLICYNAME APM Policy..."
+cat >$WORKINGDIR/policy.tcl<<EOF
+proc script::run {} {
+  tmsh::begin_transaction
+  tmsh::create /apm policy agent ending-allow /Common/$POLICYNAME_end_allow_ag { }
+  tmsh::create /apm policy agent ending-deny /Common/$POLICYNAME_end_deny_ag { }
+  tmsh::create /apm policy agent ending-deny /Common/$POLICYNAME_end_deny2_ag { }
+  tmsh::create /apm policy policy-item /Common/$POLICYNAME_end_allow { agents add { /Common/$POLICYNAME_end_allow_ag { type ending-allow } } caption Allow color 1 item-type ending }
+  tmsh::create /apm policy policy-item /Common/$POLICYNAME_end_deny { agents add { /Common/$POLICYNAME_end_deny_ag { type ending-deny } } caption Deny color 2 item-type ending }
+  tmsh::create /apm policy policy-item /Common/$POLICYNAME_end_deny2 { agents add { /Common/$POLICYNAME_end_deny2_ag { type ending-deny } } caption Deny2 color 4 item-type ending }
+  tmsh::create /apm policy policy-item /Common/$POLICYNAME_ent { caption Start color 1 rules { { caption fallback next-item /Common/$POLICYNAME_end_deny } } }
+  tmsh::create /apm policy access-policy /Common/$POLICYNAME { default-ending /Common/$POLICYNAME_end_deny items add { $POLICYNAME_end_allow { } $POLICYNAME_end_deny { } $POLICYNAME_end_deny2 { } $POLICYNAME_ent { } } start-item $POLICYNAME_ent }
+  tmsh::create /apm profile access /Common/$POLICYNAME { accept-languages add { en } access-policy /Common/$POLICYNAME}
+  tmsh::create /apm profile connectivity $POLICYNAME-connectivity defaults-from connectivity
+  tmsh::commit_transaction
+}
+EOF
 OUTPUT=$(tmsh run cli script file $WORKINGDIR/policy.tcl)
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
 echo -n "Creating Webtop Virtual Server... "
-OUTPUT=$(tmsh create ltm virtual pua_webtop { destination $WEBTOPVIP:443 ip-protocol tcp mask 255.255.255.255 profiles add { http pua rewrite-portal tcp { } pua-connectivity { context clientside } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } source-address-translation { type automap } rules { $EPHEMERALILXPLUGIN/APM_ephemeral_auth } source 0.0.0.0/0 })
+OUTPUT=$(tmsh create ltm virtual pua_webtop { destination $WEBTOPVIP:443 ip-protocol tcp mask 255.255.255.255 profiles add { http $POLICYNAME rewrite-portal tcp { } $POLICYNAME-connectivity { context clientside } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } source-address-translation { type automap } rules { $EPHEMERALILXPLUGIN/APM_ephemeral_auth } source 0.0.0.0/0 })
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
@@ -345,14 +404,16 @@ fi
 if [ "$YESNO" == "y" ]; then
   echo;echo
   echo -n "Modifying BIG-IP for RADIUS authentication against itself... "
-  echo 'proc script::run {} {' > $WORKINGDIR/radius.tcl
-  echo '  tmsh::begin_transaction' >> $WORKINGDIR/radius.tcl
-  echo "  tmsh::create /auth radius-server system_auth_name1 secret radius_secret server $RADIUSVIP" >> $WORKINGDIR/radius.tcl
-  echo '  tmsh::create /auth radius system-auth { servers add { system_auth_name1 } }' >> $WORKINGDIR/radius.tcl
-  echo '  tmsh::modify /auth remote-user default-role guest remote-console-access tmsh' >> $WORKINGDIR/radius.tcl
-  echo '  tmsh::modify /auth source type radius' >> $WORKINGDIR/radius.tcl
-  echo '  tmsh::commit_transaction' >> $WORKINGDIR/radius.tcl
-  echo '}' >> $WORKINGDIR/radius.tcl >> $WORKINGDIR/radius.tcl
+cat >radius.tcl <<$WORKINGDIR/RADIUS
+proc script::run {} {
+  tmsh::begin_transaction
+  tmsh::create /auth radius-server system_auth_pua secret radius_secret server $RADIUSVIP
+  tmsh::create /auth radius system-auth { servers add { system_auth_pua } }
+  tmsh::modify /auth remote-user default-role guest remote-console-access tmsh
+  tmsh::modify /auth source type radius
+  tmsh::commit_transaction
+}
+RADIUS
   OUTPUT=$(tmsh run cli script file $WORKINGDIR/radius.tcl)
   RESULT="$?" 2>&1
   CMD="!-1" 2>&1
