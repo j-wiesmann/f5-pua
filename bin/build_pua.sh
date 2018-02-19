@@ -33,6 +33,7 @@ checkoutput() {
     return
   else
     #failure
+    tput bel;tput bel;tput bel;tput bel
     echo "[FAILED]"
     echo;echo;echo "Previous command failed: $CMD"
     echo;echo;echo $OUTPUT
@@ -45,13 +46,20 @@ getvip() {
   while [ "$YESNO" == "n" ]
     do
     echo
-    echo -n "Type the IP address of your $SERVICENAME service virtual server and press ENTER: "
+    if [ "$DEFAULTIP" == "" ]; then
+      echo -n "Type the IP address of your $SERVICENAME service virtual server and press ENTER: "
+    else
+      echo -n "Type the IP address of your $SERVICENAME service virtual server and press ENTER [$DEFAULTIP]: "
+    fi
     read SERVICENAME_VIP
+    if [ "$SERVICENAME_VIP" == ""] && ["$DEFAULTIP" -ne ""]; then
+      SERVICENAME_VIP = $DEFAULTIP
+    fi
     echo
     echo -n "You typed $SERVICENAME_VIP, is that correct (y/n)? "
     read -n1 YESNO
     if [ "$SERVICENAME_VIP" == "$WEBSSH2VIP" ]; then
-      $SERVICENAME VIP can not equal WEBSSH Service VIP
+      $SERVICENAME VIP must not equal WEBSSH Service VIP
       YESNO="n"
     fi
   done
@@ -151,6 +159,7 @@ RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
+tput bel;tput bel
 SERVICENAME=WebSSH2
 getvip
 WEBSSH2VIP="$SERVICENAME_VIP"
@@ -158,6 +167,7 @@ WEBSSH2VIP="$SERVICENAME_VIP"
 SERVICENAME=RADIUS
 getvip
 RADIUSVIP="$SERVICENAME_VIP"
+DEFAULTIP=$RADIUSVIP
 
 SERVICENAME=LDAP
 getvip
@@ -288,7 +298,7 @@ CMD="!-1" 2>&1
 checkoutput
 
 echo -n "Creating Webtop Virtual Server... "
-OUTPUT=$(tmsh create ltm virtual pua_webtop { destination $WEBTOPVIP:443 ip-protocol tcp mask 255.255.255.255 profiles add { http pua pua-conectivity rewrite-portal tcp { } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } source-address-translation { type automap } rules { $EPHEMERALILXPLUGIN/APM_ephemeral_auth } source 0.0.0.0/0 })
+OUTPUT=$(tmsh create ltm virtual pua_webtop { destination $WEBTOPVIP:443 ip-protocol tcp mask 255.255.255.255 profiles add { http pua rewrite-portal tcp { } pua-connectivity { context clientside } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } source-address-translation { type automap } rules { $EPHEMERALILXPLUGIN/APM_ephemeral_auth } source 0.0.0.0/0 })
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
