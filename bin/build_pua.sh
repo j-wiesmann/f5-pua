@@ -5,7 +5,8 @@
 #
 # Bill Church - bill@f5.com
 #
-# v1.0 - 20180219 - Initial Release
+# v1.0.0 - 20180219 - Initial Release
+# v1.0.1 - 20180219 - Disabled SNAT automap for webtop virtual server
 
 clear
 
