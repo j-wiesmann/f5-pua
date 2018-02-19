@@ -73,8 +73,25 @@ getvip() {
     echo -n "You typed $SERVICENAME_VIP, is that correct (Y/n)? "
     read -n1 YESNO
     if [ "$SERVICENAME_VIP" == "$WEBSSH2VIP" ]; then
-      echo $SERVICENAME VIP must not equal WEBSSH Service VIP
+      echo
+      echo
+      tput bel;tput bel;tput bel;tput bel;
+      echo ERROR: $SERVICENAME VIP must not equal WEBSSH Service VIP
       YESNO="n"
+    else
+      OUTPUT=$(ping -c 1 $SERVICENAME_VIP) 2>&1
+      if [[ $? -eq 0 ]]; then
+        tput bel;tput bel;tput bel;tput bel;
+        echo
+        echo
+        echo "ERROR: IP address $SERVICENAME_VIP appears to be taken by another host on the network already."
+        echo
+        arp -a $SERVICENAME_VIP
+        echo
+        echo "Pick a different host or investigate the issue."
+        echo
+        YESNO="n"
+      fi
     fi
   done
   return
