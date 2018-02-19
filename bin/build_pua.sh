@@ -54,7 +54,7 @@ getvip() {
     fi
     read SERVICENAME_VIP
     if [[ ("$SERVICENAME_VIP" == "") && ("$DEFAULTIP" != "") ]]; then
-      SERVICENAME_VIP = $DEFAULTIP
+      SERVICENAME_VIP=$DEFAULTIP
     fi
     echo
     echo -n "You typed $SERVICENAME_VIP, is that correct (y/n)? "
@@ -93,19 +93,19 @@ echo;echo
 echo -n "Preparing environment... "
 mkdir -p $WORKINGDIR
 RESULT="$?" 2>&1
-  CMD="!-1" 2>&1
+CMD="!-1" 2>&1
 checkoutput
 
 echo "Adding directory ILX archive directory"
 mkdir -p $ILXARCHIVEDIR
 RESULT="$?" 2>&1
-  CMD="!-1" 2>&1
+CMD="!-1" 2>&1
 checkoutput
 
 echo -n "Changing to $WORKINGDIR... "
 cd $WORKINGDIR
 RESULT="$?" 2>&1
-  CMD="!-1" 2>&1
+CMD="!-1" 2>&1
 checkoutput
 
 FNAME=$STARTUPFNAME
@@ -168,20 +168,22 @@ WEBSSH2VIP="$SERVICENAME_VIP"
 SERVICENAME=RADIUS
 getvip
 RADIUSVIP="$SERVICENAME_VIP"
-DEFAULTIP=$RADIUSVIP
+DEFAULTIP=$SERVICENAME_VIP
 
 SERVICENAME=LDAP
 getvip
 LDAPVIP="$SERVICENAME_VIP"
+DEFAULTIP=$SERVICENAME_VIP
 
 SERVICENAME=LDAPS
 getvip
 LDAPSVIP="$SERVICENAME_VIP"
+DEFAULTIP=$SERVICENAME_VIP
 
 SERVICENAME=Webtop
 getvip
 WEBTOPVIP="$SERVICENAME_VIP"
-
+DEFAULTIP=$SERVICENAME_VIP
 
 echo "Creating WEBSSH Proxy Service Virtual Server... "
 OUTPUT=$(tmsh create ltm virtual webssh_proxy { destination $WEBSSH2VIP:2222 ip-protocol tcp mask 255.255.255.255 profiles add { clientssl-insecure-compatible { context clientside } tcp { } } source 0.0.0.0/0 translate-address disabled translate-port disabled })
