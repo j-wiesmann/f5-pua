@@ -208,6 +208,7 @@ CMD="!-1" 2>&1
 checkoutput
 
 tput bel;tput bel
+echo
 SERVICENAME=WebSSH2
 getvip
 WEBSSH2VIP="$SERVICENAME_VIP"
@@ -239,12 +240,14 @@ RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
+echo
 echo -n "Creating tmm route for Plugin... "
 OUTPUT=$(tmsh create net route webssh_tmm_route gw 127.1.1.254 network $WEBSSH2VIP/32)
 RESULT="$?" 2>&1
 CMD="!-1" 2>&1
 checkoutput
 
+echo
 echo -n "Installing webssh tmm vip startup script... "
 OUTPUT=$(bash /config/$STARTUPFNAME $WEBSSH2VIP)
 RESULT="$?" 2>&1
@@ -322,12 +325,26 @@ CMD="!-1" 2>&1
 checkoutput
 
 echo
-echo -n "Do you want to configure this BIG-IP to authenticate against itself for testing purposes (Y/n)? "
-echo -n "You typed $SERVICENAME_VIP, is that correct (Y/n)? "
+echo "RADIUS Testing Option:"
+echo
+echo "You can automatcially configure the BIG-IP for RADIUS authentication against itself for testing"
+echo "purposes. If this is running on a production system, this may impact access and is not recommended."
+echo "This option is recommended for lab and demo use only."
+echo
+tput bel;tput bel
+echo -n "Do you want to configure this BIG-IP to authenticate against itself for testing purposes (y/N)? "
 read -n1 YESNO
-if [ "$YESNO" != "n" ]; then
+if [ "$YESNO" == "y" ]; then
+  YESNO=n
+  echo
+  echo
+  echo -n "Are you really sure!? (y/N)? "
+  read -n1 YESNO
+  echo
+fi
+if [ "$YESNO" == "y" ]; then
   echo;echo
-  echo -n "Creating RADIUS Configuration... "
+  echo -n "Modifying BIG-IP for RADIUS authentication against itself... "
   echo 'proc script::run {} {' > $WORKINGDIR/radius.tcl
   echo '  tmsh::begin_transaction' >> $WORKINGDIR/radius.tcl
   echo "  tmsh::create /auth radius-server system_auth_name1 secret radius_secret server $RADIUSVIP" >> $WORKINGDIR/radius.tcl
@@ -347,6 +364,8 @@ if [ "$YESNO" != "n" ]; then
   echo
   echo "  username: testuser"
   echo "  password: anypassword"
+  echo
+  echo "This will allow anyone using the username testuser to log in with any password as a guest"
   echo
 fi
 
