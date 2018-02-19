@@ -126,7 +126,9 @@ checkProvision() {
     echo "Modules: $MISSINGMOD are not provisioned."
     tput bel;tput bel
     echo
-    echo "$MISSINGMOD will be provisioned to the level of $PROVLEVEL"
+    echo "$MISSINGMOD may be provisioned to the level of $PROVLEVEL."
+    echo
+    echo "This could result in service interruption and a reboot may be required."
     echo
     echo -n "Would you like to provision them (Y/n)? "
     read -n1 YESNO
