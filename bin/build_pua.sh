@@ -85,7 +85,7 @@ checkoutput
 
 downloadAndCheck() {
   echo "Checking for $FNAME..."
-  if [ ! -f $STARTUPFNAME ]; then
+  if [ ! -f $FNAME ]; then
     echo -n "Downloading $FNAME... "
     OUTPUT=$(curl --progress-bar $URL > $FNAME)
     RESULT="$?" 2>&1
