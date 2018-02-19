@@ -440,7 +440,7 @@ fi
 if [ "$YESNO" == "y" ]; then
   echo;echo
   echo -n "Modifying BIG-IP for RADIUS authentication against itself... "
-cat >radius.tcl <<$WORKINGDIR/RADIUS
+cat >$WORKINGDIR/radius.tcl <<RADIUS
 proc script::run {} {
   tmsh::begin_transaction
   tmsh::create /auth radius-server system_auth_pua secret radius_secret server $RADIUSVIP
