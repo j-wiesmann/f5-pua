@@ -243,7 +243,7 @@ checkoutput
 
 echo
 echo "Adding directory ILX archive directory"
-$OUTPUT=((mkdir -p $ILXARCHIVEDIR) 2>&1)
+OUTPUT=$((mkdir -p $ILXARCHIVEDIR) 2>&1)
 RESULT="$?" 2>&1
 PREVLINE=$(($LINENO-2))
 checkoutput
