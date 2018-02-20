@@ -10,6 +10,7 @@
 # v1.0.2 - 20180220 - Cleaned up error reporting
 # v1.0.3 - 20180220 - Cleaned up error handling
 # v1.0.4 - 20180220 - Fixed typo
+# v1.0.5 - 20180220 - Self-extracting "offline" mode. Download build_pua_offline.sh for offline use
 
 clear
 
@@ -46,6 +47,7 @@ if [[ "$STATUS" != "Active" ]]; then
   exit 255
 fi
 
+# This is a round about way to get the directory that the script was executed from...
 pushd . > /dev/null
 SCRIPT_PATH="${BASH_SOURCE[0]}";
 while([ -h "${SCRIPT_PATH}" ]); do
@@ -55,6 +57,8 @@ done
 cd "`dirname "${SCRIPT_PATH}"`" > /dev/null
 SCRIPT_PATH="`pwd`";
 popd  > /dev/null
+
+ARCHIVE=$(awk '/^__PUA_ARCHIVE__/ {print NR + 1; exit 0 ; }' ${SCRIPT_PATH}/$0)
 
 checkoutput() {
   if [ $RESULT -eq 0 ]; then
@@ -234,6 +238,18 @@ checkProvision() {
   echo
 }
 
+extractArchive () {
+  echo
+  echo "Offline mode detected."
+  echo
+  echo "Extracting archive "
+  OUTPUT=$((/usr/bin/tail -n+$ARCHIVE ${SCRIPT_PATH}/$0 | /usr/bin/base64 -d | /bin/tar xzv -C $WORKINGDIR) 2>&1)
+  RESULT="$?" 2>&1
+  PREVLINE=$(($LINENO-2))
+  checkoutput
+  return
+}
+
 echo -e "\n\n"
 echo -n "Preparing environment... "
 OUTPUT=$((mkdir -p $WORKINGDIR) 2>&1)
@@ -247,6 +263,10 @@ cd $WORKINGDIR
 RESULT="$?" 2>&1
 PREVLINE=$(($LINENO-2))
 checkoutput
+
+if [[ "$ARCHIVE" != "" ]]; then
+  extractArchive
+fi
 
 echo
 echo "Adding directory ILX archive directory"
@@ -531,3 +551,4 @@ echo "Now go build an APM policy for pua!"
 
 
 exit 0
+
