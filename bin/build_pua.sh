@@ -9,6 +9,7 @@
 # v1.0.1 - 20180219 - Disabled SNAT automap for webtop virtual server
 # v1.0.2 - 20180220 - Cleaned up error reporting
 # v1.0.3 - 20180220 - Cleaned up error handling
+# v1.0.4 - 20180220 - Fixed typo
 
 clear
 
@@ -242,7 +243,7 @@ checkoutput
 
 echo
 echo -n "Changing to $WORKINGDIR... "
-OUTPUT=cd $WORKINGDIR
+cd $WORKINGDIR
 RESULT="$?" 2>&1
 PREVLINE=$(($LINENO-2))
 checkoutput
