@@ -237,7 +237,7 @@ checkoutput
 
 echo
 echo -n "Changing to $WORKINGDIR... "
-cd $WORKINGDIR
+OUTPUT=cd $WORKINGDIR
 RESULT="$?" 2>&1
 PREVLINE=$(($LINENO-2))
 checkoutput
@@ -375,7 +375,7 @@ RESULT="$?" 2>&1
 PREVLINE=$(($LINENO-2))
 checkoutput
 
-echo -e "\n\n"
+echo
 echo -n "Creating WEBSSH Proxy Service Virtual Server... "
 OUTPUT=$((tmsh create ltm virtual webssh_proxy { destination $WEBSSH2VIP:2222 ip-protocol tcp mask 255.255.255.255 profiles add { clientssl-insecure-compatible { context clientside } tcp { } } source 0.0.0.0/0 translate-address disabled translate-port disabled }) 2>&1)
 RESULT="$?" 2>&1
@@ -458,6 +458,7 @@ RESULT="$?" 2>&1
 PREVLINE=$(($LINENO-2))
 checkoutput
 
+echo
 echo -n "Creating Webtop Virtual Server... "
 OUTPUT=$((tmsh create ltm virtual pua_webtop { destination $WEBTOPVIP:443 ip-protocol tcp mask 255.255.255.255 profiles add { http pua rewrite-portal tcp { } pua-connectivity { context clientside } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } rules { $EPHEMERALILXPLUGIN/APM_ephemeral_auth } source 0.0.0.0/0 }) 2>&1)
 RESULT="$?" 2>&1
@@ -465,7 +466,8 @@ PREVLINE=$(($LINENO-2))
 checkoutput
 
 echo
-echo "RADIUS Testing Option:"
+echo "RADIUS Testing Option"
+echo "====================="
 echo
 echo "You can automatcially configure the BIG-IP for RADIUS authentication against itself for testing"
 echo "purposes. If this is running on a production system, this may impact access and is not recommended."
@@ -483,7 +485,7 @@ if [ "$YESNO" == "y" ]; then
   echo
 fi
 if [ "$YESNO" == "y" ]; then
-  echo -e "\n\n"
+  echo
   echo -n "Modifying BIG-IP for RADIUS authentication against itself... "
 cat >$WORKINGDIR/radius.tcl <<RADIUS
 proc script::run {} {
