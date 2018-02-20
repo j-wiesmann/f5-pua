@@ -8,6 +8,7 @@
 # v1.0.0 - 20180219 - Initial Release
 # v1.0.1 - 20180219 - Disabled SNAT automap for webtop virtual server
 # v1.0.2 - 20180220 - Cleaned up error reporting
+# v1.0.3 - 20180220 - Cleaned up error handling
 
 clear
 
