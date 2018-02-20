@@ -168,12 +168,16 @@ checkProvision() {
   if [ "$MISSINGMOD" == "" ]; then
     echo "SUCCESS: All modules provisioned."
   else
+    echo
+    echo "Module Provisioning"
+    echo "==================="
+    echo
     echo "Modules: $MISSINGMOD are not provisioned."
     tput bel;tput bel
     echo
     echo "$MISSINGMOD may be provisioned to the level of $PROVLEVEL."
     echo
-    echo "This could result in service interruption and a reboot may be required."
+    echo "Provisioning modules could result in service interruption and a reboot may be required."
     echo
     echo -n "Would you like to provision them (Y/n)? "
     read -n1 YESNO
@@ -212,6 +216,7 @@ checkProvision() {
           echo "Due to provisioning requirements, a reboot of this sytems is required."
           echo
           echo "Please reboot the system and re-run this script to continue."
+          echo
           exit 255
         fi
       done
