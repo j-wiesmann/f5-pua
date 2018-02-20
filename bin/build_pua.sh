@@ -237,7 +237,7 @@ checkoutput
 
 echo
 echo -n "Changing to $WORKINGDIR... "
-OUTPUT=cd $WORKINGDIR
+cd $WORKINGDIR
 RESULT="$?" 2>&1
 PREVLINE=$(($LINENO-2))
 checkoutput
