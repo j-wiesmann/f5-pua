@@ -11,12 +11,15 @@
 # v1.0.3 - 20180220 - Cleaned up error handling
 # v1.0.4 - 20180220 - Fixed typo
 # v1.0.5 - 20180220 - Self-extracting "offline" mode. Download build_pua_offline.sh for offline use
+# v1.0.6 - 20180220 - Added introduction text
+
+echo -e "\e[97m"
 
 clear
 
 shopt -s nocasematch
 
-WORKINGDIR=/tmp/pua
+WORKINGDIR=$(mktemp -d -t pua.XXXXXXXXXX)
 
 STARTUPURL=https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/startup_script_webssh_commands.sh
 STARTUPFNAME=startup_script_webssh_commands.sh
@@ -31,6 +34,16 @@ EPHEMERALILXPLUGIN=ephemeral_auth_plugin
 ILXARCHIVEDIR=/var/ilx/workspaces/Common/archive
 PROVLEVEL=nominal
 MODULESREQUIRED="apm ltm ilx"
+SCRIPTVERSION="1.0.6"
+
+cleanup () {
+  # runs on EXIT or CTRL-C
+  echo -e "\n\n"
+  echo "Cleaning up..."
+  echo -e -n "\e[0;97m"
+  rm -rf "$WORKINGDIR"
+}
+trap cleanup EXIT
 
 # dont try to figure it out, just ask bill@f5.com
 DEFAULTIP=
@@ -60,14 +73,51 @@ popd  > /dev/null
 
 ARCHIVE=$(awk '/^__PUA_ARCHIVE__/ {print NR + 1; exit 0 ; }' ${SCRIPT_PATH}/$0)
 
+displayIntroduction () {
+cols=$(tput cols)
+fold -s -w $cols <<INTRODUCTION | less -X -F -K -E
+${SCRIPT_PATH}/$0 - v$SCRIPTVERSION
+
+Introduction
+============
+
+This script will configure a reference implementation of the F5 Privileged User Authentication solution. The only requirements are a running and licensed system ("Active"), initial configuration complete (licensed, VLANs, self IPs), and preferably already provisioned for LTM+APM+ILX. The script will check for and can enable it for you if you wish.
+
+You will be prompted for IP addresses for 5 services:
+
+1. WebSSH Proxy - This IP address may not be shared with any other IP on the BIG-IP. This will be the only service with this restriction. This proxy is ultimately called by the APM web top. It’s also important to note that SNAT may not be used on this virtual server. (webssh_proxy)
+
+2. RADIUS Proxy – This runs the RADIUS Ephemeral Authentication Service. This IP may be shared with other IPs on the BIG-IP system if the protocol or port (udp/1812) do not conflict. (radius_proxy)
+
+3. LDAP Proxy – This runs the LDAP Ephemeral Authentication Service. This IP may be shared with other IPs on the BIG-IP system if the protocol or port (tcp/389) do not conflict. (ldap_proxy)
+
+4. LDAPS Proxy – This runs the LDAPS (ssl) Ephemeral Authentication Service. This IP may be shared with other IPs on the BIG-IP system if the protocol or port (tcp/389) do not conflict. (ldaps_proxy)
+
+5. Web top – This runs the LDAP Ephemeral Authentication Service. This IP may be shared with other IPs on the BIG-IP system if the protocol or port (tcp/389) do not conflict. By default SNAT is disabled for this vs as the WebSSH proxy may not interoperate with SNAT. If you change this option be sure to institute some sort of selective disable option (iRule) when connecting to the webssh_proxy as a portal resource.
+
+WebSSH, LDAPS, and web top will all be initially configured with a default client-ssl profile, after testing this should be changed to use a legitimate certificate.
+
+A blank APM policy is created and attached to the web top vs “pua_webtop”, this policy will need to be built out for the pua_webtop service to operate correctly.
+
+RADIUS Testing
+==============
+
+The BIG-IP administrative interface can be configured to authenticate against itself for testing. This will allow “admin” and anyone using the test account “testuser” with ANY password to authenticate as a guest to the GUI or SSH. If you enable this option, instructions will be provided at the end of this script for testing
+INTRODUCTION
+echo
+echo "Press any key to contine, or CTRL-C to cancel."
+read -n1 NUL
+echo
+}
+
 checkoutput() {
   if [ $RESULT -eq 0 ]; then
-    echo "[OK]"
+    echo -e "\e[1;92m[OK]\e[0;97m"
     return
   else
     #failure
     tput bel;tput bel;tput bel;tput bel
-    echo "[FAILED]"
+    echo -e "\e[1;91m[FAILED]\e[0;39m"
     echo -e "\n\n"
     echo "Previous command failed in ${SCRIPT_PATH}/$0 with error level: ${RESULT} on line: $PREVLINE:"
     echo
@@ -89,14 +139,14 @@ getvip() {
       echo -n "and press ENTER: "
     else
       echo "Type the IP address of your $SERVICENAME service virtual server"
-      echo -n "and press ENTER [$DEFAULTIP]: "
+      echo -n -e "and press ENTER [$\e[94mDEFAULTIP\e[97m]: "
     fi
     read SERVICENAME_VIP
     if [[ ("$SERVICENAME_VIP" == "") && ("$DEFAULTIP" != "") ]]; then
       SERVICENAME_VIP=$DEFAULTIP
     fi
     echo
-    echo -n "You typed $SERVICENAME_VIP, is that correct (Y/n)? "
+    echo -n -e "You typed \e[94m$SERVICENAME_VIP\e[97m, is that correct (Y/n)? "
     read -n1 YESNO
     if [ "$SERVICENAME_VIP" == "$WEBSSH2VIP" ]; then
       echo
@@ -122,7 +172,7 @@ getvip() {
           echo
           YESNO="n"
         else
-          echo "[OK]"
+          echo -e "\e[1;92m[OK]\e[0;97m"
           CHECKEDIP=$SERVICENAME_VIP
         fi
       fi
@@ -132,8 +182,9 @@ getvip() {
 }
 
 downloadAndCheck() {
-  echo "Checking for $FNAME..."
+  echo -n "Checking for $FNAME... "
   if [ ! -f $FNAME ]; then
+    echo -e "\e[1;91m[NOT FOUND]\e[0;39m"
     echo -n "Downloading $FNAME... "
     OUTPUT=$((curl --progress-bar $URL > $FNAME) 2>&1)
     RESULT="$?" 2>&1
@@ -144,29 +195,36 @@ downloadAndCheck() {
     RESULT="$?" 2>&1
     PREVLINE=$(($LINENO-2))
     checkoutput
+  else
+    echo -e "\e[1;92m[OK]\e[0;97m"
   fi
-  echo "Checking $FNAME hash..."
-  sha256sum -c $FNAME.sha256
+  echo -n "Hash check for $FNAME "
+  OUTPUT=$((sha256sum -c $FNAME.sha256) 2>&1)
+  RESULT="$?" 2>&1
   if [ $? -gt 0 ]; then
+    echo -e "\e[1;91m[FAILED]\e[0;39m"
     echo "SHA256 checksum failed. Halting."
+    echo "Output from command: $OUTPUT"
     exit 255
+  else
+    echo -e "\e[1;92m[OK]\e[0;97m"
   fi
 }
 
 checkProvision() {
   MISSINGMOD=""
-  echo -e "\n\n"
+  echo
   echo "Checking modules are provisioned."
   echo
   for i in $MODULESREQUIRED; do
     echo -n "Checking $i... "
     OUTPUT=$(tmsh list sys provision $i one-line|awk '{print $6}')
     if [ "$OUTPUT" == "" ]; then
-      echo "[FAILED]"
+    echo -e "\e[1;91m[FAILED]\e[0;39m"
       echo
       MISSINGMOD+="$i "
     else
-      echo "OK"
+      echo -e "\e[1;92m[OK]\e[0;97m"
       echo
     fi
   done
@@ -174,8 +232,8 @@ checkProvision() {
     echo "SUCCESS: All modules provisioned."
   else
     echo
-    echo "Module Provisioning"
-    echo "==================="
+    echo -e "\e[1;93mModule Provisioning\e[0;39m"
+    echo -e "\e[1;93m===================\e[0;39m"
     echo
     echo "Modules: $MISSINGMOD are not provisioned."
     tput bel;tput bel
@@ -217,6 +275,7 @@ checkProvision() {
         if [ "$STATUS" == "REBOOT REQUIRED" ]; then
           tput bel;tput bel;tput bel;tput bel
           echo
+          echo -e "\e[1;91mREBOOT REQUIRED\e[0;39m"
           echo
           echo "Due to provisioning requirements, a reboot of this sytems is required."
           echo
@@ -225,11 +284,11 @@ checkProvision() {
           exit 255
         fi
       done
-      echo "[OK]"
+      echo -e "\e[1;92m[OK]\e[0;97m"
     else
       tput bel;tput bel;tput bel;tput bel
       echo -e "\n\n"
-      echo "ERROR: Refusing to run until modules are provisioned. Please provision LTM APM and ILX"
+      echo -e "\e[1;91mERROR:\e[0;39m Refusing to run until modules are provisioned. Please provision LTM APM and ILX"
       echo "and run script again."
       echo
       exit 255
@@ -240,9 +299,9 @@ checkProvision() {
 
 extractArchive () {
   echo
-  echo "Offline mode detected."
+  echo -e "\e[1;31mOffline mode detected. Skipping downloads.\e[0;97m"
   echo
-  echo "Extracting archive "
+  echo -n "Extracting archive "
   OUTPUT=$((/usr/bin/tail -n+$ARCHIVE ${SCRIPT_PATH}/$0 | /usr/bin/base64 -d | /bin/tar xzv -C $WORKINGDIR) 2>&1)
   RESULT="$?" 2>&1
   PREVLINE=$(($LINENO-2))
@@ -250,7 +309,9 @@ extractArchive () {
   return
 }
 
-echo -e "\n\n"
+displayIntroduction
+
+echo
 echo -n "Preparing environment... "
 OUTPUT=$((mkdir -p $WORKINGDIR) 2>&1)
 RESULT="$?" 2>&1
@@ -269,7 +330,7 @@ if [[ "$ARCHIVE" != "" ]]; then
 fi
 
 echo
-echo "Adding directory ILX archive directory"
+echo -n "Adding directory ILX archive directory "
 OUTPUT=$((mkdir -p $ILXARCHIVEDIR) 2>&1)
 RESULT="$?" 2>&1
 PREVLINE=$(($LINENO-2))
@@ -278,7 +339,6 @@ checkoutput
 checkProvision
 
 tput bel;tput bel
-echo
 SERVICENAME=WebSSH2
 getvip
 WEBSSH2VIP="$SERVICENAME_VIP"
@@ -465,7 +525,7 @@ checkoutput
 
 echo
 echo -n "Creating pua APM Policy..."
-cat >$WORKINGDIR/policy.tcl<<EOF
+cat >$WORKINGDIR/policy.tcl<<APMPOLICY
 proc script::run {} {
   tmsh::begin_transaction
   tmsh::create /apm policy agent ending-allow /Common/pua_end_allow_ag { }
@@ -478,7 +538,7 @@ proc script::run {} {
   tmsh::create /apm profile connectivity pua-connectivity defaults-from connectivity
   tmsh::commit_transaction
 }
-EOF
+APMPOLICY
 OUTPUT=$((tmsh run cli script file $WORKINGDIR/policy.tcl) 2>&1)
 RESULT="$?" 2>&1
 PREVLINE=$(($LINENO-2))
@@ -491,14 +551,16 @@ RESULT="$?" 2>&1
 PREVLINE=$(($LINENO-2))
 checkoutput
 
-echo
-echo "RADIUS Testing Option"
-echo "====================="
-echo
-echo "You can automatcially configure the BIG-IP for RADIUS authentication against itself for testing"
-echo "purposes. If this is running on a production system, this may impact access and is not recommended."
-echo "This option is recommended for lab and demo use only."
-echo
+cols=$(tput cols)
+fold -s -w $cols <<RADIUSINFO | less -X -F -K -E
+
+RADIUS Testing Option
+=====================
+
+You can automatcially configure the BIG-IP for RADIUS authentication against itself for testing purposes. If this is running on a production system, this may impact access and is not recommended. This option is recommended for lab and demo use only.
+
+RADIUSINFO
+
 tput bel;tput bel
 echo -n "Do you want to configure this BIG-IP to authenticate against itself for testing purposes (y/N)? "
 read -n1 YESNO
@@ -527,16 +589,21 @@ RADIUS
   RESULT="$?" 2>&1
   PREVLINE=$(($LINENO-2))
   checkoutput
-  echo -e "\n\n"
-  echo "You can test your new configuration now by browsing to:"
-  echo
-  echo "  https://$WEBSSH2VIP:2222/ssh/host/$MGMTIP"
-  echo
-  echo "  username: testuser"
-  echo "  password: anypassword"
-  echo
-  echo "This will allow anyone using the username testuser to log in with any password as a guest"
-  echo
+cols=$(tput cols)
+fold -s -w $cols <<RADIUSSUMMARY | less -X -F -K -E
+
+
+You can test your new configuration now by browsing to:
+
+  https://$WEBSSH2VIP:2222/ssh/host/$MGMTIP
+
+  username: testuser
+  password: anypassword
+
+This will allow anyone using the username testuser to log in with any password as a guest
+
+
+RADIUSSUMMARY
 fi
 
 echo -n "Saving config... "
@@ -548,7 +615,6 @@ checkoutput
 echo "Task complete."
 echo
 echo "Now go build an APM policy for pua!"
-
 
 exit 0
 
