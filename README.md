@@ -6,3 +6,7 @@
 - follow the directions
 - build out/customize APM policy
 - profit?
+
+# Windows Users
+
+Download the .zip versions of the .sh files... Your OS will mess those bash scripts up something good. :)
