@@ -28,7 +28,8 @@ The BIG-IP administrative interface can be configured to authenticate against it
 # Instructions
 
 - Configure a BIG-IP with VLAN and self IP
-- download `bin/build_pua_offline.sh` and copy to BIG-IP
+- download [build_pua_offline.zip](https://github.com/billchurch/f5-pua/blob/master/build_pua.zip) and copy to BIG-IP
+- unzip `build_pua_offline.zip`
 - run `bash build_pua_offline.sh`
 - follow the directions
 - build out/customize APM policy
@@ -36,4 +37,13 @@ The BIG-IP administrative interface can be configured to authenticate against it
 
 # Windows Users
 
-Download the `.zip` versions of the `.sh` files... Your OS will mess those bash scripts up something good. :)
+Don't try to download the `.sh` files... Your OS will mess those bash scripts up something good. Just get their `.zip` versions. :)
+
+# Mac and Linux Users
+
+Feel free to download [build_pua.sh](https://github.com/billchurch/f5-pua/blob/master/bin/build_pua.sh) and [build_pua_offline.sh](https://github.com/billchurch/f5-pua/blob/master/bin/build_pua_offline.sh) directly and save yourself a step... Go nuts!
+
+# Folders
+**scripts/** - my maintance scripts for building out these packages, they won't help you a bit
+
+**bin/** - deployment folder which is either referenced by these scripts `build_pua.(sh|zip)` or embedded in them `build_pua_offline.(sh|zip)`. You won't need anything from here usually...
