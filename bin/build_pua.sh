@@ -12,6 +12,7 @@
 # v1.0.4 - 20180220 - Fixed typo
 # v1.0.5 - 20180220 - Self-extracting "offline" mode. Download build_pua_offline.sh for offline use
 # v1.0.6 - 20180220 - Added introduction text
+# v1.0.7 - 20180220 - Corrected typo for RADIUS configuration and IP configuration (superficial)
 
 echo -e "\e[97m"
 
@@ -139,7 +140,7 @@ getvip() {
       echo -n "and press ENTER: "
     else
       echo "Type the IP address of your $SERVICENAME service virtual server"
-      echo -n -e "and press ENTER [$\e[94mDEFAULTIP\e[97m]: "
+      echo -n -e "and press ENTER [\e[94m$DEFAULTIP\e[97m]: "
     fi
     read SERVICENAME_VIP
     if [[ ("$SERVICENAME_VIP" == "") && ("$DEFAULTIP" != "") ]]; then
@@ -578,8 +579,8 @@ if [ "$YESNO" == "y" ]; then
 cat >$WORKINGDIR/radius.tcl <<RADIUS
 proc script::run {} {
   tmsh::begin_transaction
-  tmsh::create /auth radius-server system_auth_pua secret radius_secret server $RADIUSVIP
-  tmsh::create /auth radius system-auth { servers add { system_auth_pua } }
+  tmsh::create /auth radius-server system_auth_name1 secret radius_secret server $RADIUSVIP
+  tmsh::create /auth radius system-auth { servers add { system_auth_name1 } }
   tmsh::modify /auth remote-user default-role guest remote-console-access tmsh
   tmsh::modify /auth source type radius
   tmsh::commit_transaction
