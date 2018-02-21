@@ -20,6 +20,8 @@ clear
 
 shopt -s nocasematch
 
+BIGIPVER=$(cat /etc/issue | grep -i BIG-IP | awk '{print $2}')
+
 WORKINGDIR=$(mktemp -d -t pua.XXXXXXXXXX)
 
 STARTUPURL=https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/startup_script_webssh_commands.sh
@@ -311,6 +313,16 @@ extractArchive () {
 }
 
 displayIntroduction
+
+if [[ "$BIGIPVER" != "13.1.0.2" ]]; then
+  echo
+  echo -e "\e[1;91mWARNING\e[0;39m"
+  echo
+  echo "This script has only been tested with BIG-IP v13.1.0.2."
+  echo
+  echo -e "\e[1;91mProceed at your own risk\e[0;39m"
+  echo
+fi
 
 echo
 echo -n "Preparing environment... "
