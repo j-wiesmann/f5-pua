@@ -6,7 +6,7 @@
 #
 # For full non-interactive use, NONINTERACTIVE must be set to "y"
 
-NONINTERACTIVE="" # y or empty for no
+NONINTERACTIVE="y" # y or empty for no
 WebSSH2VIP="192.168.20.62" # dedicated IP address
 RADIUSVIP="192.168.20.63" # the next 4 IP addresses can be shared
 LDAPVIP="192.168.20.63"
@@ -16,7 +16,7 @@ WebtopVIP="192.168.20.63"
 # RADIUS Testimng option y/n Configure the BIG-IP for RADIUS auth to itself.
 # If used with NONINTERACTIVE unset, this will not be semi-automatic and will result in
 # The BIG-IP being configured for RADIUS auth against itself.
-# RadiusConfig="y"
+RadiusConfig="y"
 
 # In case you have some weird responses from /var/prompt/ps1 and want to force run
 # not a good idea to do this unless you know what you're doing.
