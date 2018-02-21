@@ -23,7 +23,12 @@ A blank APM policy is created and attached to the web top vs “pua_webtop”, t
 
 The BIG-IP administrative interface can be configured to authenticate against itself for testing. This will allow “admin” and anyone using the test account “testuser” with ANY password to authenticate as a guest to the GUI or SSH. If you enable this option, instructions will be provided at the end of this script for testing.
 
+# Non-interactive mode
+A file called `pua_config.sh` may be placed in the same directory as `build_pua.sh` or `build_pua_offline.sh` to fully automate the install, or provide defaults for a "semi-automatic" deployment. See [pua_config.sh](https://github.com/billchurch/f5-pua/blob/master/pua_config.sh) as an example.
 
+When started, `build_pua.sh` or `build_pua_offline.sh` both check for the existence of this file.
+
+Additionally, most of the variables set in the top of `pua_config.sh` and `pua_config_offline.sh` may be overridden by this file.
 
 # Instructions
 
