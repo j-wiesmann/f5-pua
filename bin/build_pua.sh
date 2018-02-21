@@ -12,7 +12,7 @@
 # v1.0.4 - 20180220 - Fixed typo
 # v1.0.5 - 20180220 - Self-extracting "offline" mode. Download build_pua_offline.sh for offline use
 # v1.0.6 - 20180220 - Added introduction text
-# v1.0.7 - 20180220 - Corrected typo for RADIUS configuration and IP configuration (superficial)
+# v1.0.7 - 20180220 - Corrected typo for RADIUS configuration and IP configuration (superficial), version check
 
 echo -e "\e[97m"
 
