@@ -1,26 +1,40 @@
 #!/bin/bash
 
 # PUA configuration file
-# By leaving NONINTERACTIVE blank and setting the VIPs you may pre-stage IP addresses in the
+# By leaving noninteractive blank and setting the VIPs you may pre-stage IP addresses in the
 # various VIP configuration options for semi-automatic operation
 #
-# For full non-interactive use, NONINTERACTIVE must be set to "y"
+# For full non-interactive use, noninteractive must be set to "y"
 
-NONINTERACTIVE="y" # y or empty for no
-WebSSH2VIP="192.168.20.62" # dedicated IP address
-RADIUSVIP="192.168.20.63" # the next 4 IP addresses can be shared
-LDAPVIP="192.168.20.63"
-LDAPSVIP="192.168.20.63"
-WebtopVIP="192.168.20.63"
+noninteractive="y" # y or empty for no
+webssh2vip="192.168.20.65" # dedicated IP address
+radiusvip="192.168.20.63" # the next 4 IP addresses can be shared
+ldapvip="192.168.20.63"
+ldapsvip="192.168.20.63"
+webtopvip="192.168.20.64"
 
 # RADIUS Testimng option y/n Configure the BIG-IP for RADIUS auth to itself.
-# If used with NONINTERACTIVE unset, this will not be semi-automatic and will result in
+# If used with noninteractive unset, this will not be semi-automatic and will result in
 # The BIG-IP being configured for RADIUS auth against itself.
-RadiusConfig="y"
+radiusconfig="y"
+
+# A sample CA is availabale for testing. This should only be utilized on non-production systems."
+sampleca="y"
+
+# placing a CA cert bundle in the same directory as build_pua.sh/build_pua_offline.sh and specifying
+# the filename here will automatically install that certificate and associate the file with the
+# pua_webtop-clientssl profile. Must also use sampleca="y"
+# samplecafname=my.ca.cer
+
+# placing an APM policy exported with "ng_export" in the same directory as build_pua.sh/
+# build_pua_offline.sh and specifying the filename here will automatically install that
+# policy in lieu of sample policy
+# apmpolicyfname=my.ca.cer
+# apmpolicydisplayname="my_custom_policy"
 
 # In case you have some weird responses from /var/prompt/ps1 and want to force run
 # not a good idea to do this unless you know what you're doing.
-# STATUS="Active"
+# status="Active"
 
 # If you're downloading this file with Windows, make sure to run it through `dos2unix` or something to
 # fix the linefeed characters that Windows feels compelled to add. Best to use curl if you can

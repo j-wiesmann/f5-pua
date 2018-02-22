@@ -5,3 +5,7 @@ BIG-IP-ILX-ephemeral_auth-current.tgz.sha256
 startup_script_webssh_commands.sh
 startup_script_webssh_commands.sh.sha256
 build_pua.sh
+ca.pua.lab.cer
+ca.pua.lab.cer.sha256
+profile-pua_webtop_policy.conf.tar.gz
+profile-pua_webtop_policy.conf.tar.gz.sha256

@@ -5,31 +5,36 @@
 #
 # Bill Church - bill@f5.com
 #
-# v1.0.8 - 20180221 - Added config file option, semi-automatic config, documentation updates
+# v1.0.9
 
 # If you want to run this in non-interactive mode, download, modify and place pua_config.sh in the
 # same folder as this script on the BIG-IP.
 
 shopt -s nocasematch
 
-SCRIPTNAME=$(basename $0)
-BIGIPVER=$(cat /etc/issue | grep -i BIG-IP | awk '{print $2}')
-WORKINGDIR=$(mktemp -d -t pua.XXXXXXXXXX)
-STARTUPURL=https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/startup_script_webssh_commands.sh
-STARTUPFNAME=startup_script_webssh_commands.sh
-WEBSSHURL=https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/BIG-IP-13.1.0.2-ILX-WebSSH2-current.tgz
-WEBSSHFNAME=BIG-IP-13.1.0.2-ILX-WebSSH2-current.tgz
-WEBSSHILXNAME=WebSSH2-0.2.0-test
-WEBSSHILXPLUGIN=WebSSH_plugin-test
-EPHEMERALURL=https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/BIG-IP-ILX-ephemeral_auth-current.tgz
-EPHEMERALFNAME=BIG-IP-ILX-ephemeral_auth-current.tgz
-EPHEMERALILXNAME=ephemeral_auth-0.2.8-test
-EPHEMERALILXPLUGIN=ephemeral_auth_plugin
-ILXARCHIVEDIR=/var/ilx/workspaces/Common/archive
-PROVLEVEL=nominal
-MODULESREQUIRED="apm ltm ilx"
-SCRIPTVERSION="1.0.8"
-CONFIGFILE="pua_config.sh"
+scriptname=$(basename $0)
+bigipver=$(cat /etc/issue | grep -i BIG-IP | awk '{print $2}')
+workingdir=$(mktemp -d -t pua.XXXXXXXXXX)
+startupurl=https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/startup_script_webssh_commands.sh
+startupfname=startup_script_webssh_commands.sh
+websshurl=https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/BIG-IP-13.1.0.2-ILX-WebSSH2-current.tgz
+websshfname=BIG-IP-13.1.0.2-ILX-WebSSH2-current.tgz
+websshilxname=WebSSH2-0.2.0
+websshilxplugin=WebSSH_plugin
+ephemeralurl=https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/BIG-IP-ILX-ephemeral_auth-current.tgz
+ephemeralfname=BIG-IP-ILX-ephemeral_auth-current.tgz
+ephemeralilxname=ephemeral_auth-0.2.8
+ephemeralilxplugin=ephemeral_auth_plugin
+samplecaurl=https://raw.githubusercontent.com/billchurch/f5-pua/master/sample/ca.pua.lab.cer
+samplecafname=ca.pua.lab.cer
+apmpolicyurl=https://raw.githubusercontent.com/billchurch/f5-pua/master/sample/profile-pua_webtop_policy.conf.tar.gz
+apmpolicyfname=profile-pua_webtop_policy.conf.tar.gz
+apmpolicydisplayname="sample_pua_policy"
+ilxarchivedir=/var/ilx/workspaces/Common/archive
+provlevel=nominal
+modulesrequired="apm ltm ilx"
+scriptversion="1.0.8"
+configfile="pua_config.sh"
 cols=$(tput cols)
 
 #colors
@@ -50,41 +55,41 @@ cleanup () {
   echo
   echo "Cleaning up..."
   echo "${fgLtWhi}"
-  rm -rf "$WORKINGDIR"
+  rm -rf "$workingdir"
 }
 trap cleanup EXIT
 
 # dont try to figure it out, just ask bill@f5.com
-DEFAULTIP=
-MGMTIP=$(ifconfig mgmt | awk '/inet addr/{print substr($2,6)}')
+defaultip=
+mgmtip=$(ifconfig mgmt | awk '/inet addr/{print substr($2,6)}')
 
-read STATUS </var/prompt/ps1
+read status </var/prompt/ps1
 
 # This is a round about way to get the directory that the script was executed from...
 pushd . > /dev/null
-SCRIPT_PATH="${BASH_SOURCE[0]}";
-while([ -h "${SCRIPT_PATH}" ]); do
-    cd "`dirname "${SCRIPT_PATH}"`"
-    SCRIPT_PATH="$(readlink "`basename "${SCRIPT_PATH}"`")";
+script_path="${BASH_SOURCE[0]}";
+while([ -h "${script_path}" ]); do
+    cd "`dirname "${script_path}"`"
+    script_path="$(readlink "`basename "${script_path}"`")";
 done
-cd "`dirname "${SCRIPT_PATH}"`" > /dev/null
-SCRIPT_PATH="`pwd`";
+cd "`dirname "${script_path}"`" > /dev/null
+script_path="`pwd`";
 popd  > /dev/null
 
-echo "${SCRIPT_PATH}/${SCRIPTNAME} - v$SCRIPTVERSION"
+echo "${script_path}/${scriptname} - v$scriptversion"
 
 # Reading the config file, that's your chance to change or customize any variables
 # set above...
 
-if [[ -f "${SCRIPT_PATH}/$CONFIGFILE" ]]; then
-  echo "Reading config from ${SCRIPT_PATH}/$CONFIGFILE..."
-  source ${SCRIPT_PATH}/$CONFIGFILE
+if [[ -f "${script_path}/$configfile" ]]; then
+  echo "Reading config from ${script_path}/$configfile..."
+  source ${script_path}/$configfile
 fi
 
-if [[ ("$STATUS" != "Active") ]]; then
+if [[ ("$status" != "Active") ]]; then
   tput bel;tput bel;tput bel;tput bel
   echo
-  echo "Your BIG-IP system does not appear to be in a consistent state, status reports: $STATUS"
+  echo "Your BIG-IP system does not appear to be in a consistent state, status reports: $status"
   echo
   echo "Please correct the condition and try running this script again."
   echo
@@ -92,7 +97,7 @@ if [[ ("$STATUS" != "Active") ]]; then
 fi
 
 
-ARCHIVE=$(awk '/^__PUA_ARCHIVE__/ {print NR + 1; exit 0 ; }' ${SCRIPT_PATH}/${SCRIPTNAME})
+archive_location=$(awk '/^__PUA_ARCHIVE__/ {print NR + 1; exit 0 ; }' ${script_path}/${scriptname})
 
 displayIntroduction () {
 fold -s -w $cols <<INTRODUCTION | less --RAW-CONTROL-CHARS -X -F -K -E
@@ -130,7 +135,7 @@ echo
 }
 
 checkoutput() {
-  if [ $RESULT -eq 0 ]; then
+  if [ $result -eq 0 ]; then
     echo "${fgLtGrn}[OK]${fgLtWhi}"
     return
   else
@@ -138,68 +143,68 @@ checkoutput() {
     tput bel;tput bel;tput bel;tput bel
     echo "${fgLtRed}[FAILED]${fgLtWhi}"
     echo "\n\n"
-    echo "Previous command failed in ${SCRIPT_PATH}/${SCRIPTNAME} with error level: ${RESULT} on line: $PREVLINE:"
+    echo "Previous command failed in ${script_path}/${scriptname} with error level: ${result} on line: $prevline:"
     echo
-    sed "${PREVLINE}q;d" ${SCRIPT_PATH}/${SCRIPTNAME} | awk '{$1=$1};1'
+    sed "${prevline}q;d" ${script_path}/${scriptname} | awk '{$1=$1};1'
     echo "\n\n"
     echo "STDOUT/STDERR:"
-    echo ${OUTPUT}
+    echo ${output}
     exit 255
   fi
 }
 
 getvip() {
-  YESNO="n"
-  while [ "$YESNO" == "n" ]
+  yesno="n"
+  while [ "$yesno" == "n" ]
     do
     echo
-    if [[ ! ("$NONINTERACTIVE" == "y") || ("$REPROMPT" == "y") ]]; then
-      if [ "$DEFAULTIP" == "" ]; then
-        echo "Type the IP address of your $SERVICENAME service virtual server"
+    if [[ ! ("$noninteractive" == "y") || ("$reprompt" == "y") ]]; then
+      if [ "$defaultip" == "" ]; then
+        echo "Type the IP address of your $servicename service virtual server"
         echo -n "and press ENTER: "
       else
-        echo "Type the IP address of your $SERVICENAME service virtual server"
-        echo -n -e "and press ENTER [${fgLtCya}$DEFAULTIP${fgLtWhi}]: "
+        echo "Type the IP address of your $servicename service virtual server"
+        echo -n -e "and press ENTER [${fgLtCya}$defaultip${fgLtWhi}]: "
       fi
-      read SERVICENAME_VIP
-      if [[ ("$SERVICENAME_VIP" == "") && ("$DEFAULTIP" != "") ]]; then
-        SERVICENAME_VIP=$DEFAULTIP
+      read servicenamevip
+      if [[ ("$servicenamevip" == "") && ("$defaultip" != "") ]]; then
+        servicenamevip=$defaultip
       fi
       echo
-      echo -n -e "You typed ${fgLtCya}$SERVICENAME_VIP${fgLtWhi}, is that correct (Y/n)? "
-      read -n1 YESNO
-      REPROMPT="n"
+      echo -n -e "You typed ${fgLtCya}$servicenamevip${fgLtWhi}, is that correct (Y/n)? "
+      read -n1 yesno
+      reprompt="n"
     else
-      echo "$SERVICENAME = ${fgLtCya}$SERVICENAME_VIP${fgLtWhi}"
-      YESNO="y"
+      echo "$servicename = ${fgLtCya}$servicenamevip${fgLtWhi}"
+      yesno="y"
     fi
-    if [[ ("$SERVICENAME_VIP" == "$WEBSSH2VIP") && ! ("$SERVICENAME" == "WebSSH2") ]]; then
+    if [[ ("$servicenamevip" == "$webssh2vip") && ! ("$servicename" == "WebSSH2") ]]; then
       echo
       echo
       tput bel;tput bel;tput bel;tput bel;
-      echo "${fgLtRed}ERROR:${fgLtWhi} $SERVICENAME VIP must not equal WEBSSH Service VIP"
-      REPROMPT="y"
-      YESNO="n"
+      echo "${fgLtRed}ERROR:${fgLtWhi} $servicename VIP must not equal WEBSSH Service VIP"
+      reprompt="y"
+      yesno="n"
       echo
     else
-      if [[ ("$YESNO" != "n") && ("$SERVICENAME_VIP" != "$CHECKEDIP") ]]; then
+      if [[ ("$yesno" != "n") && ("$servicenamevip" != "$checkedip") ]]; then
         echo -n "Checking IP... "
-        OUTPUT=$(ping -c 1 $SERVICENAME_VIP 2>&1)
+        output=$(ping -c 1 $servicenamevip 2>&1)
         if [[ $? -eq 0 ]]; then
           tput bel;tput bel;tput bel;tput bel;
           echo "${fgLtRed}[FAILED]${fgLtWhi}"
           echo
-          echo "${fgLtRed}ERROR:${fgLtWhi} IP address $SERVICENAME_VIP appears to be taken by another host on the network already."
+          echo "${fgLtRed}ERROR:${fgLtWhi} IP address $servicenamevip appears to be taken by another host on the network already."
           echo
-          arp -a $SERVICENAME_VIP
+          arp -a $servicenamevip
           echo
           echo "Pick a different host or investigate the issue."
           echo
-          YESNO="n"
-          REPROMPT="y"
+          yesno="n"
+          reprompt="y"
         else
           echo "${fgLtGrn}[OK]${fgLtWhi}"
-          CHECKEDIP=$SERVICENAME_VIP
+          checkedip=$servicenamevip
         fi
       fi
     fi
@@ -209,30 +214,30 @@ getvip() {
 
 downloadAndCheck() {
   echo
-  echo -n "Checking for $FNAME... "
-  if [ ! -f $FNAME ]; then
+  echo -n "Checking for $fname... "
+  if [ ! -f $fname ]; then
     echo "${fgLtYel}[NOT FOUND]${fgLtWhi}"
-    echo -n "Downloading $FNAME... "
-    OUTPUT=$((curl --progress-bar $URL > $FNAME) 2>&1)
-    RESULT="$?" 2>&1
-    PREVLINE=$(($LINENO-2))
+    echo -n "Downloading $fname... "
+    output=$((curl --progress-bar $url > $fname) 2>&1)
+    result="$?" 2>&1
+    prevline=$(($LINENO-2))
     checkoutput
-    echo -n "Downloading $FNAME.sha256... "
-    OUTPUT=$((curl --progress-bar $URL.sha256 > $FNAME.sha256) 2>&1)
-    RESULT="$?" 2>&1
-    PREVLINE=$(($LINENO-2))
+    echo -n "Downloading $fname.sha256... "
+    output=$((curl --progress-bar $url.sha256 > $fname.sha256) 2>&1)
+    result="$?" 2>&1
+    prevline=$(($LINENO-2))
     checkoutput
   else
     echo "${fgLtGrn}[OK]${fgLtWhi}"
   fi
   echo
-  echo -n "Hash check for $FNAME "
-  OUTPUT=$((sha256sum -c $FNAME.sha256) 2>&1)
-  RESULT="$?" 2>&1
+  echo -n "Hash check for $fname "
+  output=$((sha256sum -c $fname.sha256) 2>&1)
+  result="$?" 2>&1
   if [ $? -gt 0 ]; then
     echo "${fgLtRed}[FAILED]${fgLtWhi}"
     echo "SHA256 checksum failed. Halting."
-    echo "Output from command: $OUTPUT"
+    echo "Output from command: $output"
     exit 255
   else
     echo "${fgLtGrn}[OK]${fgLtWhi}"
@@ -240,22 +245,22 @@ downloadAndCheck() {
 }
 
 checkProvision() {
-  MISSINGMOD=""
+  missingmod=""
   echo
   echo "Checking modules are provisioned."
   echo
-  for i in $MODULESREQUIRED; do
+  for i in $modulesrequired; do
     echo -n "Checking $i... "
-    OUTPUT=$(tmsh list sys provision $i one-line|awk '{print $6}')
-    if [ "$OUTPUT" == "" ]; then
+    output=$(tmsh list sys provision $i one-line|awk '{print $6}')
+    if [ "$output" == "" ]; then
     echo "${fgLtRed}[FAILED]${fgLtWhi}"
       echo
-      MISSINGMOD+="$i "
+      missingmod+="$i "
     else
       echo "${fgLtGrn}[OK]${fgLtWhi}"
     fi
   done
-  if [ "$MISSINGMOD" == "" ]; then
+  if [ "$missingmod" == "" ]; then
     echo
     echo "SUCCESS: All modules provisioned."
   else
@@ -263,44 +268,44 @@ checkProvision() {
     echo "${fgLtYel}Module Provisioning${fgLtWhi}"
     echo "${fgLtYel}===================${fgLtWhi}"
     echo
-    echo "Modules: $MISSINGMOD are not provisioned."
+    echo "Modules: $missingmod are not provisioned."
     tput bel;tput bel
     echo
-    echo "$MISSINGMOD may be provisioned to the level of $PROVLEVEL."
+    echo "$missingmod may be provisioned to the level of $provlevel."
     echo
     echo "Provisioning modules could result in service interruption and a reboot may be required."
     echo
     echo -n "Would you like to provision them (Y/n)? "
-    read -n1 YESNO
-    if [ "$YESNO" != "n" ]; then
+    read -n1 yesno
+    if [ "$yesno" != "n" ]; then
       echo
       echo -n "Provisioning "
-      echo 'proc script::run {} {' > $WORKINGDIR/provision.tcl
-      echo '  tmsh::begin_transaction' >> $WORKINGDIR/provision.tcl
-      for i in $MISSINGMOD; do
-        echo "  tmsh::modify /sys provision $i level $PROVLEVEL" >> $WORKINGDIR/provision.tcl
+      echo 'proc script::run {} {' > $workingdir/provision.tcl
+      echo '  tmsh::begin_transaction' >> $workingdir/provision.tcl
+      for i in $missingmod; do
+        echo "  tmsh::modify /sys provision $i level $provlevel" >> $workingdir/provision.tcl
       done
-      echo '  tmsh::commit_transaction' >> $WORKINGDIR/provision.tcl
-      echo '}' >> $WORKINGDIR/provision.tcl
-      OUTPUT=$((tmsh run cli script file $WORKINGDIR/provision.tcl)  2>&1)
-      RESULT="$?" 2>&1
-      PREVLINE=$(($LINENO-2))
+      echo '  tmsh::commit_transaction' >> $workingdir/provision.tcl
+      echo '}' >> $workingdir/provision.tcl
+      output=$((tmsh run cli script file $workingdir/provision.tcl)  2>&1)
+      result="$?" 2>&1
+      prevline=$(($LINENO-2))
       checkoutput
       sleep 10
       echo
       echo -n "Saving config "
-      OUTPUT=$((tmsh save /sys config) 2>&1)
-      RESULT="$?" 2>&1
-      PREVLINE=$(($LINENO-2))
+      output=$((tmsh save /sys config) 2>&1)
+      result="$?" 2>&1
+      prevline=$(($LINENO-2))
       checkoutput
-      STATUS=
+      status=
       echo
       echo -n "Waiting for provisioning to quiesce "
-      while [[ "$STATUS" != "Active" ]]; do
+      while [[ "$status" != "Active" ]]; do
         sleep 1
         echo -n .
-        read STATUS </var/prompt/ps1
-        if [ "$STATUS" == "REBOOT REQUIRED" ]; then
+        read status </var/prompt/ps1
+        if [ "$status" == "REBOOT REQUIRED" ]; then
           tput bel;tput bel;tput bel;tput bel
           echo
           echo "${fgLtRed}REBOOT REQUIRED${fgLtWhi}"
@@ -329,16 +334,16 @@ extractArchive () {
   echo "${fgLtYel}Offline mode detected. Skipping downloads.${fgLtWhi}"
   echo
   echo -n "Extracting archive "
-  OUTPUT=$((/usr/bin/tail -n+$ARCHIVE ${SCRIPT_PATH}/${SCRIPTNAME} | /usr/bin/base64 -d | /bin/tar xzv -C $WORKINGDIR) 2>&1)
-  RESULT="$?" 2>&1
-  PREVLINE=$(($LINENO-2))
+  output=$((/usr/bin/tail -n+$archive_location ${script_path}/${scriptname} | /usr/bin/base64 -d | /bin/tar xzv -C $workingdir) 2>&1)
+  result="$?" 2>&1
+  prevline=$(($LINENO-2))
   checkoutput
   return
 }
 
 checkInteractive () {
-  if [[ "$NONINTERACTIVE" == "y" ]]; then
-    if [[ ("$WebSSH2VIP" = "") || ("$RADIUSVIP" == "") || ("$LDAPVIP" == "") || ("$LDAPSVIP" == "") || ("$WebtopVIP" == "") || ("$RadiusConfig" == "") ]]; then
+  if [[ "$noninteractive" == "y" ]]; then
+    if [[ ("$webssh2vip" = "") || ("$radiusvip" == "") || ("$ldapvip" == "") || ("$ldapsvip" == "") || ("$" == "") || ("$" == "") ]]; then
       echo
       echo "${fgLtRed}ERROR${fgLtWhi}"
       echo
@@ -346,7 +351,7 @@ checkInteractive () {
       exit 255
     else
       echo
-      echo "${fgLtGrn}Noninteractive is GO... Buckle up...${fgLtWhi}"
+      echo "${fgLtGrn}noninteractive is GO... Buckle up...${fgLtWhi}"
     fi
   else
     echo
@@ -355,7 +360,7 @@ checkInteractive () {
 }
 
 checkVer () {
-  if [[ "$BIGIPVER" != "13.1.0.2" ]]; then
+  if [[ "$bigipver" != "13.1.0.2" ]]; then
     echo
     echo "${fgLtRed}WARNING${fgLtWhi}"
     echo
@@ -367,7 +372,7 @@ checkVer () {
 }
 
 radiusTestOption () {
-  if [[ ("$RadiusConfig" == "") ]]; then
+  if [[ ("$radiusconfig" == "") ]]; then
     fold -s -w $cols <<RADIUSINFO | less --RAW-CONTROL-CHARS -X -F -K -
 ${fgLtWhi}
 ${fgLtYel}RADIUS Testing Option${fgLtWhi}
@@ -379,38 +384,38 @@ RADIUSINFO
 
     tput bel;tput bel
     echo -n "Do you want to configure this BIG-IP to authenticate against itself for testing purposes (y/N)? "
-    read -n1 YESNO
-    if [ "$YESNO" == "y" ]; then
-      YESNO=n
+    read -n1 yesno
+    if [ "$yesno" == "y" ]; then
+      yesno=n
       echo
       echo
       echo -n "Are you really sure!? (y/N)? "
-      read -n1 RadiusConfig
+      read -n1 radiusconfig
       echo
     fi
   fi
-  if [ "$RadiusConfig" == "y" ]; then
+  if [ "$radiusconfig" == "y" ]; then
     echo
     echo -n "Modifying BIG-IP for RADIUS authentication against itself... "
-    cat >$WORKINGDIR/radius.tcl <<RADIUS
+    cat >$workingdir/radius.tcl <<RADIUS
 proc script::run {} {
   tmsh::begin_transaction
-  tmsh::create /auth radius-server system_auth_name1 secret radius_secret server $RADIUSVIP
+  tmsh::create /auth radius-server system_auth_name1 secret radius_secret server $radiusvip
   tmsh::create /auth radius system-auth { servers add { system_auth_name1 } }
   tmsh::modify /auth remote-user default-role guest remote-console-access tmsh
   tmsh::modify /auth source type radius
   tmsh::commit_transaction
 }
 RADIUS
-    OUTPUT=$((tmsh run cli script file $WORKINGDIR/radius.tcl) 2>&1)
-    RESULT="$?" 2>&1
-    PREVLINE=$(($LINENO-2))
+    output=$((tmsh run cli script file $workingdir/radius.tcl) 2>&1)
+    result="$?" 2>&1
+    prevline=$(($LINENO-2))
     checkoutput
     echo
     fold -s -w $cols <<RADIUSSUMMARY | less --RAW-CONTROL-CHARS -X -F -K -
-You can test your new configuration now by browsing to:
+You can test WebSSH2 and Ephemeral authentication without APM configuration now by browsing to:
 ${fgLtWhi}
-  ${fgLtYel}https://$WEBSSH2VIP:2222/ssh/host/$MGMTIP${fgLtWhi}
+  ${fgLtYel}https://$webssh2vip:2222/ssh/host/$mgmtip${fgLtWhi}
 
   username: testuser
   password: anypassword
@@ -421,268 +426,349 @@ RADIUSSUMMARY
   fi
 }
 
+clientsslProfile () {
+  if [[ -f "${script_path}/$samplecafname" ]]; then
+    capathandfile="${script_path}/$samplecafname"
+    customca="y"
+  else
+    capathandfile="${workingdir}/${samplecafname}"
+  fi
+  if [[ !("$sampleca" == "y") ]]; then
+    echo
+    echo "${fgLtYel}Sample Certificate Authority{fgLtWhi}"
+    echo "============================"
+    echo
+    echo "A sample CA is available for testing. This should be implemented on non-production systems only."
+    echo
+    echo -n "Would you like to download a sample CA for testing (Y/n)? "
+    read -n1 sampleca
+  fi
+  if [[ ("$sampleca" == "y") ]]; then
+    if [[ !("$customca" == "y") ]]; then
+      fname=$samplecafname
+      url=$samplecaurl
+      downloadAndCheck
+    fi
+    echo
+    echo -n "Installing CA file ${fgLtCya}${samplecafname}${fgLtWhi} "
+    output=$((tmsh install sys crypto cert ${samplecafname} from-local-file ${capathandfile} cert-validators none) 2>&1)
+    result="$?" 2>&1
+    prevline=$(($LINENO-2))
+    checkoutput
+
+    echo -n "Creating pua_webtop-clientssl profile with CA ${fgLtCya}${samplecafname}${fgLtWhi} "
+    output=$((tmsh create ltm profile client-ssl pua_webtop-clientssl defaults-from clientssl ca-file ${samplecafname}.crt client-cert-ca ${samplecafname}.crt) 2>&1)
+    result="$?" 2>&1
+    prevline=$(($LINENO-2))
+    checkoutput
+  else
+    echo -n "Creating pua_webtop-clientssl profile "
+    output=$((tmsh create ltm profile client-ssl pua_webtop-clientssl defaults-from clientssl) 2>&1)
+    result="$?" 2>&1
+    prevline=$(($LINENO-2))
+    checkoutput
+  fi
+}
+
+createAPMpolicy () {
+  if [[ -f "${script_path}/$apmpolicyfname" ]]; then
+    policypathandfile="${script_path}/$apmpolicyfname"
+    custompolicy="y"
+  else
+    policypathandfile="${workingdir}/${apmpolicyfname}"
+  fi
+  if [[ !("$custompolicy" == "y") ]]; then
+    fname=$apmpolicyfname
+    url=$apmpolicyurl
+    downloadAndCheck
+  fi
+    echo -n "Importing APM sample profile ${fgLtCya}${apmpolicyfname}${fgLtWhi} "
+    output=$((ng_import ${policypathandfile} ${apmpolicydisplayname} ) 2>&1)
+    result="$?" 2>&1
+    prevline=$(($LINENO-2))
+    checkoutput
+}
+
 checkInteractive
 
-[[ ! ("$NONINTERACTIVE" == "y") ]] && displayIntroduction
+[[ ! ("$noninteractive" == "y") ]] && displayIntroduction
 
 checkVer
 
 echo
 echo -n "Preparing environment... "
-OUTPUT=$((mkdir -p $WORKINGDIR) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+output=$((mkdir -p $workingdir) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 echo
-echo -n "Changing to $WORKINGDIR... "
-cd $WORKINGDIR
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+echo -n "Changing to $workingdir... "
+cd $workingdir
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
-if [[ "$ARCHIVE" != "" ]]; then
+if [[ "$archive_location" != "" ]]; then
   extractArchive
 fi
 
 echo
 echo -n "Adding ILX archive directory "
-OUTPUT=$((mkdir -p $ILXARCHIVEDIR) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+output=$((mkdir -p $ilxarchivedir) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 checkProvision
 
-SERVICENAME=WebSSH2
-SERVICENAME_VIP=$WebSSH2VIP
-[[ !("$SERVICENAME_VIP" == "") ]] && DEFAULTIP=$SERVICENAME_VIP
+servicename=WebSSH2
+servicenamevip=$webssh2vip
+[[ !("$servicenamevip" == "") ]] && defaultip=$servicenamevip
 getvip
-WEBSSH2VIP="$SERVICENAME_VIP"
+webssh2vip="$servicenamevip"
 
-SERVICENAME=RADIUS
-SERVICENAME_VIP=$RADIUSVIP
-[[ !("$SERVICENAME_VIP" == "") ]] && DEFAULTIP=$SERVICENAME_VIP
+servicename=RADIUS
+servicenamevip=$radiusvip
+[[ !("$servicenamevip" == "") ]] && defaultip=$servicenamevip
 getvip
-RADIUSVIP="$SERVICENAME_VIP"
-DEFAULTIP=$SERVICENAME_VIP
+radiusvip="$servicenamevip"
+defaultip=$servicenamevip
 
-SERVICENAME=LDAP
-SERVICENAME_VIP=$LDAPVIP
-[[ !("$SERVICENAME_VIP" == "") ]] && DEFAULTIP=$SERVICENAME_VIP
+servicename=LDAP
+servicenamevip=$ldapvip
+[[ !("$servicenamevip" == "") ]] && defaultip=$servicenamevip
 getvip
-LDAPVIP="$SERVICENAME_VIP"
-DEFAULTIP=$SERVICENAME_VIP
+ldapvip="$servicenamevip"
+defaultip=$servicenamevip
 
-SERVICENAME=LDAPS
-SERVICENAME_VIP=$LDAPSVIP
-[[ !("$SERVICENAME_VIP" == "") ]] && DEFAULTIP=$SERVICENAME_VIP
+servicename=LDAPS
+servicenamevip=$ldapsvip
+[[ !("$servicenamevip" == "") ]] && defaultip=$servicenamevip
 getvip
-LDAPSVIP="$SERVICENAME_VIP"
-DEFAULTIP=$SERVICENAME_VIP
+ldapsvip="$servicenamevip"
+defaultip=$servicenamevip
 
-SERVICENAME=Webtop
-SERVICENAME_VIP=$WebtopVIP
-[[ !("$SERVICENAME_VIP" == "") ]] && DEFAULTIP=$SERVICENAME_VIP
+servicename=Webtop
+servicenamevip=$webtopvip
+[[ !("$servicenamevip" == "") ]] && defaultip=$servicenamevip
 getvip
-WEBTOPVIP="$SERVICENAME_VIP"
-DEFAULTIP=$SERVICENAME_VIP
+webtopvip="$servicenamevip"
+defaultip=$servicenamevip
 
-FNAME=$STARTUPFNAME
-URL=$STARTUPURL
+fname=$startupfname
+url=$startupurl
 downloadAndCheck
 
-FNAME=$WEBSSHFNAME
-URL=$WEBSSHURL
+fname=$websshfname
+url=$websshurl
 downloadAndCheck
 
-FNAME=$EPHEMERALFNAME
-URL=$EPHEMERALURL
+fname=$ephemeralfname
+url=$ephemeralurl
 downloadAndCheck
+
+clientsslProfile
 
 echo
-echo -n "Placing $STARTUPFNAME in /config... "
-OUTPUT=$((mv $STARTUPFNAME /config) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+echo -n "Placing $startupfname in /config... "
+output=$((mv $startupfname /config) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 echo
-echo -n "Placing $WEBSSHFNAME in $ILXARCHIVEDIR... "
-OUTPUT=$((mv $WORKINGDIR/$WEBSSHFNAME $ILXARCHIVEDIR/$WEBSSHFNAME) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+echo -n "Placing $websshfname in $ilxarchivedir... "
+output=$((mv $workingdir/$websshfname $ilxarchivedir/$websshfname) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 echo
-echo -n "Placing $EPHEMERALFNAME in $ILXARCHIVEDIR... "
-OUTPUT=$((mv $WORKINGDIR/$EPHEMERALFNAME $ILXARCHIVEDIR/$EPHEMERALFNAME) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+echo -n "Placing $ephemeralfname in $ilxarchivedir... "
+output=$((mv $workingdir/$ephemeralfname $ilxarchivedir/$ephemeralfname) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 echo
 echo -n "Creating ephemeral_config data group... "
-OUTPUT=$((tmsh create ltm data-group internal ephemeral_config { records add { DEBUG { data 2 } DEBUG_PASSWORD { data 1 } RADIUS_SECRET { data radius_secret } RADIUS_TESTMODE { data 1 } RADIUS_TESTUSER { data testuser } ROTATE { data 0 } pwrulesLen { data 8 } pwrulesLwrCaseMin { data 1 } pwrulesNumbersMin { data 1 } pwrulesPunctuationMin { data 1 } pwrulesUpCaseMin { data 1 } } type string }) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+output=$((tmsh create ltm data-group internal ephemeral_config { records add { DEBUG { data 2 } DEBUG_PASSWORD { data 1 } RADIUS_SECRET { data radius_secret } RADIUS_TESTMODE { data 1 } RADIUS_TESTUSER { data testuser } ROTATE { data 0 } pwrulesLen { data 8 } pwrulesLwrCaseMin { data 1 } pwrulesNumbersMin { data 1 } pwrulesPunctuationMin { data 1 } pwrulesUpCaseMin { data 1 } } type string }) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 echo
 echo -n "Creating ephemeral_LDAP_Bypass data group... "
-OUTPUT=$((tmsh create ltm data-group internal ephemeral_LDAP_Bypass { records add { "cn=f5 service account,cn=users,dc=mydomain,dc=local" { } cn=administrator,cn=users,dc=mydomain,dc=local { } cn=proxyuser,cn=users,dc=mydomain,dc=local { } } type string }) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+output=$((tmsh create ltm data-group internal ephemeral_LDAP_Bypass { records add { "cn=f5 service account,cn=users,dc=mydomain,dc=local" { } cn=administrator,cn=users,dc=mydomain,dc=local { } cn=proxyuser,cn=users,dc=mydomain,dc=local { } } type string }) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 echo
 echo -n "Creating ephemeral_RADIUS_Bypass data group... "
-OUTPUT=$((tmsh create ltm data-group internal ephemeral_RADIUS_Bypass { type string }) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+output=$((tmsh create ltm data-group internal ephemeral_RADIUS_Bypass { type string }) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 echo
 echo -n "Creating ephemeral_radprox_host_groups data group... "
-OUTPUT=$((tmsh create ltm data-group internal ephemeral_radprox_host_groups { type string }) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+output=$((tmsh create ltm data-group internal ephemeral_radprox_host_groups { type string }) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 echo
 echo -n "Creating ephemeral_radprox_radius_attributes data group... "
-OUTPUT=$((tmsh create ltm data-group internal ephemeral_radprox_radius_attributes { records add { BLUECOAT { data "[['Service-Type', <<<VALUE>>>]]" } CISCO { data "[['Vendor-Specific', 9, [['Cisco-AVPair', 'shell:priv-lvl=<<<VALUE>>>']]]]" } DEFAULT { data "[['Vendor-Specific', 9, [['Cisco-AVPair', 'shell:priv-lvl=<<<VALUE>>>']]]]" } F5 { data "[['Vendor-Specific', 3375, [['F5-LTM-User-Role, <<<VALUE>>>]]]]" } PALOALTO { data "[['Vendor-Specific', 25461, [['PaloAlto-Admin-Role', <<<VALUE>>>]]]]" } } type string }) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+output=$((tmsh create ltm data-group internal ephemeral_radprox_radius_attributes { records add { BLUECOAT { data "[['Service-Type', <<<VALUE>>>]]" } CISCO { data "[['Vendor-Specific', 9, [['Cisco-AVPair', 'shell:priv-lvl=<<<VALUE>>>']]]]" } DEFAULT { data "[['Vendor-Specific', 9, [['Cisco-AVPair', 'shell:priv-lvl=<<<VALUE>>>']]]]" } F5 { data "[['Vendor-Specific', 3375, [['F5-LTM-User-Role, <<<VALUE>>>]]]]" } PALOALTO { data "[['Vendor-Specific', 25461, [['PaloAlto-Admin-Role', <<<VALUE>>>]]]]" } } type string }) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 echo
 echo -n "Creating ephemeral_radprox_radius_client data group... "
-OUTPUT=$((tmsh create ltm data-group internal ephemeral_radprox_radius_client { type string }) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+output=$((tmsh create ltm data-group internal ephemeral_radprox_radius_client { type string }) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 echo
 echo -n "Importing WebSSH2 Workspace... "
-# create ilx workspace new from-uri https://raw.githubusercontent.com/billchurch/f5-pua/master/bin/BIG-IP-ILX-WebSSH2-current.tgz
-OUTPUT=$((tmsh create ilx workspace $WEBSSHILXNAME from-archive $WEBSSHFNAME) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+output=$((tmsh create ilx workspace $websshilxname from-archive $websshfname) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 echo
 echo -n "Importing Ephemeral Authentication Workspace... "
-OUTPUT=$((tmsh create ilx workspace $EPHEMERALILXNAME from-archive $EPHEMERALFNAME) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+output=$((tmsh create ilx workspace $ephemeralilxname from-archive $ephemeralfname) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 echo
 echo -n "Modifying Ephemeral Authentication Workspace... "
-OUTPUT=$((tmsh modify ilx workspace $EPHEMERALILXNAME node-version 6.9.1) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+output=$((tmsh modify ilx workspace $ephemeralilxname node-version 6.9.1) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 echo
 echo -n "Creating WEBSSH Proxy Service Virtual Server... "
-OUTPUT=$((tmsh create ltm virtual webssh_proxy { destination $WEBSSH2VIP:2222 ip-protocol tcp mask 255.255.255.255 profiles add { clientssl-insecure-compatible { context clientside } tcp { } } source 0.0.0.0/0 translate-address disabled translate-port disabled }) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+output=$((tmsh create ltm virtual webssh_proxy { destination $webssh2vip:2222 ip-protocol tcp mask 255.255.255.255 profiles add { clientssl-insecure-compatible { context clientside } tcp { } } source 0.0.0.0/0 translate-address disabled translate-port disabled }) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 echo
 echo -n "Creating tmm route for Plugin... "
-OUTPUT=$((tmsh create net route webssh_tmm_route gw 127.1.1.254 network $WEBSSH2VIP/32) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+output=$((tmsh create net route webssh_tmm_route gw 127.1.1.254 network $webssh2vip/32) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 echo
 echo -n "Installing webssh tmm vip startup script... "
-OUTPUT=$((bash /config/$STARTUPFNAME $WEBSSH2VIP) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+output=$((bash /config/$startupfname $webssh2vip) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 #echo -n "Modifying WebSSH2 Workspace config.json... "
-#OUTPUT=$(jq '.listen.ip = "0.0.0.0"' $ILXARCHIVEDIR/../$WEBSSHILXNAME/extensions/WebSSH2/config.json > $ILXARCHIVEDIR/../$WEBSSHILXNAME/extensions/WebSSH2/config.json)
-#RESULT="$?" 2>&1
-#PREVLINE=$(($LINENO-2))
+#output=$(jq '.listen.ip = "0.0.0.0"' $ilxarchivedir/../$websshilxname/extensions/WebSSH2/config.json > $ilxarchivedir/../$websshilxname/extensions/WebSSH2/config.json)
+#result="$?" 2>&1
+#prevline=$(($LINENO-2))
 #checkoutput
 
 echo
 echo -n "Creating WebSSH2 Plugin... "
-OUTPUT=$((tmsh create ilx plugin $WEBSSHILXPLUGIN from-workspace $WEBSSHILXNAME extensions { webssh2 { concurrency-mode single ilx-logging enabled  } }) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+output=$((tmsh create ilx plugin $websshilxplugin from-workspace $websshilxname extensions { webssh2 { concurrency-mode single ilx-logging enabled  } }) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 echo
 echo -n "Creating Ephemeral Authentication Plugin... "
-OUTPUT=$((tmsh create ilx plugin $EPHEMERALILXPLUGIN from-workspace $EPHEMERALILXNAME extensions { ephemeral_auth { ilx-logging enabled } }) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+output=$((tmsh create ilx plugin $ephemeralilxplugin from-workspace $ephemeralilxname extensions { ephemeral_auth { ilx-logging enabled } }) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 echo
 echo -n "Creating RADIUS Proxy Service Virtual Server... "
-OUTPUT=$((tmsh create ltm virtual radius_proxy { destination $RADIUSVIP:1812 ip-protocol udp mask 255.255.255.255 profiles add { udp { } } source-address-translation { type automap } source 0.0.0.0/0 rules { $EPHEMERALILXPLUGIN/radius_proxy }}) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+output=$((tmsh create ltm virtual radius_proxy { destination $radiusvip:1812 ip-protocol udp mask 255.255.255.255 profiles add { udp { } } source-address-translation { type automap } source 0.0.0.0/0 rules { $ephemeralilxplugin/radius_proxy }}) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 echo
 echo -n "Creating LDAP Proxy Service Virtual Server... "
-OUTPUT=$((tmsh create ltm virtual ldap_proxy { destination $LDAPVIP:389 ip-protocol tcp mask 255.255.255.255 profiles add { tcp { } } source-address-translation { type automap } source 0.0.0.0/0 rules { $EPHEMERALILXPLUGIN/ldap_proxy }}) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+output=$((tmsh create ltm virtual ldap_proxy { destination $ldapvip:389 ip-protocol tcp mask 255.255.255.255 profiles add { tcp { } } source-address-translation { type automap } source 0.0.0.0/0 rules { $ephemeralilxplugin/ldap_proxy }}) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 echo
 echo -n "Creating LDAPS (ssl) Proxy Service Virtual Server... "
-OUTPUT=$((tmsh create ltm virtual ldaps_proxy { destination $LDAPSVIP:636 ip-protocol tcp mask 255.255.255.255 profiles add { tcp { } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } source-address-translation { type automap } source 0.0.0.0/0 rules { $EPHEMERALILXPLUGIN/ldap_proxy_ssl }}) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+output=$((tmsh create ltm virtual ldaps_proxy { destination $ldapsvip:636 ip-protocol tcp mask 255.255.255.255 profiles add { tcp { } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } source-address-translation { type automap } source 0.0.0.0/0 rules { $ephemeralilxplugin/ldap_proxy_ssl }}) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 echo
-echo -n "Creating pua APM Policy..."
-cat >$WORKINGDIR/policy.tcl<<APMPOLICY
-proc script::run {} {
-  tmsh::begin_transaction
-  tmsh::create /apm policy agent ending-allow /Common/pua_end_allow_ag { }
-  tmsh::create /apm policy agent ending-deny /Common/pua_end_deny_ag { }
-  tmsh::create /apm policy policy-item /Common/pua_end_allow { agents add { /Common/pua_end_allow_ag { type ending-allow } } caption Allow color 1 item-type ending }
-  tmsh::create /apm policy policy-item /Common/pua_end_deny { agents add { /Common/pua_end_deny_ag { type ending-deny } } caption Deny color 2 item-type ending }
-  tmsh::create /apm policy policy-item /Common/pua_ent { caption Start color 1 rules { { caption fallback next-item /Common/pua_end_deny } } }
-  tmsh::create /apm policy access-policy /Common/pua { default-ending /Common/pua_end_deny items add { pua_end_allow { } pua_end_deny { } pua_ent { } } start-item pua_ent }
-  tmsh::create /apm profile access /Common/pua { accept-languages add { en } access-policy /Common/pua}
-  tmsh::create /apm profile connectivity pua-connectivity defaults-from connectivity
-  tmsh::commit_transaction
-}
-APMPOLICY
-OUTPUT=$((tmsh run cli script file $WORKINGDIR/policy.tcl) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+echo -n "Creating APM connectivity profile... "
+output=$((tmsh create /apm profile connectivity pua-connectivity defaults-from connectivity) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
+checkoutput
+
+createAPMpolicy
+
+echo
+echo -n "Modifying pua APM Portal Resource..."
+output=$((tmsh modify apm resource portal-access sample_pua_policy-webssh_portal application-uri https://${webssh2vip}:2222/ssh/host/${mgmtip} items modify { item { subnet ${webssh2vip}/32 } }) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
+checkoutput
+
+echo
+echo -n "Applying pua APM Policy..."
+output=$((tmsh modify /apm profile access /Common/${apmpolicydisplayname} generation-action increment) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 echo
 echo -n "Creating Webtop Virtual Server... "
-OUTPUT=$((tmsh create ltm virtual pua_webtop { destination $WEBTOPVIP:443 ip-protocol tcp mask 255.255.255.255 profiles add { http pua rewrite-portal tcp { } pua-connectivity { context clientside } clientssl { context clientside } serverssl-insecure-compatible { context serverside } } rules { $EPHEMERALILXPLUGIN/APM_ephemeral_auth } source 0.0.0.0/0 }) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+output=$((tmsh create ltm virtual pua_webtop { destination $webtopvip:443 ip-protocol tcp mask 255.255.255.255 profiles add { http { } ppp { } pua-connectivity pua_webtop-clientssl { context clientside } rba { } rewrite-portal { } ${apmpolicydisplayname} { } serverssl-insecure-compatible { context serverside } tcp { } websso { } } rules { $ephemeralilxplugin/APM_ephemeral_auth } source 0.0.0.0/0 }) 2>&1)
+#output=$((tmsh create ltm virtual pua_webtop { destination $webtopvip:443 ip-protocol tcp mask 255.255.255.255 profiles add { http rewrite-portal tcp { } pua-connectivity { context clientside } pua_webtop-clientssl { context clientside } serverssl-insecure-compatible { context serverside } } rules { $ephemeralilxplugin/APM_ephemeral_auth } source 0.0.0.0/0 }) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
 
 radiusTestOption
 
-
 echo -n "Saving config... "
-OUTPUT=$((tmsh save /sys config) 2>&1)
-RESULT="$?" 2>&1
-PREVLINE=$(($LINENO-2))
+output=$((tmsh save /sys config) 2>&1)
+result="$?" 2>&1
+prevline=$(($LINENO-2))
 checkoutput
+
+echo
+    fold -s -w $cols <<FINALSUMMARY | less --RAW-CONTROL-CHARS -X -F -K -
+You can test your new APM webtop now by browsing to:
+${fgLtWhi}
+  ${fgLtYel}https://$webtopvip{fgLtWhi}
+
+  username: <any>
+  password: <any>
+
+This will let anyone in with any policy. The next step after testing would be to add access control through AD, MFA, or some other method.
+
+If the RADIUS testing option was enabled, any username will log in using Ephemeral Authentication.
+
+FINALSUMMARY
 
 echo "Task complete."
 echo
