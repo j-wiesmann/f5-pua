@@ -5,7 +5,8 @@
 #
 # Bill Church - bill@f5.com
 #
-# v1.0.9 - 20180221 - Added config file option, semi-automatic config, documentation updates
+# v1.0.10
+scriptversion="1.0.10"
 
 # If you want to run this in non-interactive mode, download, modify and place pua_config.sh in the
 # same folder as this script on the BIG-IP.
@@ -33,7 +34,6 @@ apmpolicydisplayname="sample_pua_policy"
 ilxarchivedir=/var/ilx/workspaces/Common/archive
 provlevel=nominal
 modulesrequired="apm ltm ilx"
-scriptversion="1.0.8"
 configfile="pua_config.sh"
 cols=$(tput cols)
 
@@ -188,6 +188,7 @@ getvip() {
       echo
     else
       if [[ ("$yesno" != "n") && ("$servicenamevip" != "$checkedip") ]]; then
+        echo
         echo -n "Checking IP... "
         output=$(ping -c 1 $servicenamevip 2>&1)
         if [[ $? -eq 0 ]]; then
@@ -443,19 +444,19 @@ clientsslProfile () {
     echo -n "Would you like to download a sample CA for testing (Y/n)? "
     read -n1 sampleca
   fi
+  echo
   if [[ ("$sampleca" == "y") ]]; then
     if [[ !("$customca" == "y") ]]; then
       fname=$samplecafname
       url=$samplecaurl
       downloadAndCheck
     fi
-    echo
     echo -n "Installing CA file ${fgLtCya}${samplecafname}${fgLtWhi} "
     output=$((tmsh install sys crypto cert ${samplecafname} from-local-file ${capathandfile} cert-validators none) 2>&1)
     result="$?" 2>&1
     prevline=$(($LINENO-2))
     checkoutput
-
+    echo
     echo -n "Creating pua_webtop-clientssl profile with CA ${fgLtCya}${samplecafname}${fgLtWhi} "
     output=$((tmsh create ltm profile client-ssl pua_webtop-clientssl defaults-from clientssl ca-file ${samplecafname}.crt client-cert-ca ${samplecafname}.crt) 2>&1)
     result="$?" 2>&1
@@ -482,6 +483,7 @@ createAPMpolicy () {
     url=$apmpolicyurl
     downloadAndCheck
   fi
+    echo
     echo -n "Importing APM sample profile ${fgLtCya}${apmpolicyfname}${fgLtWhi} "
     output=$((ng_import ${policypathandfile} ${apmpolicydisplayname} ) 2>&1)
     result="$?" 2>&1
@@ -759,7 +761,7 @@ echo
     fold -s -w $cols <<FINALSUMMARY | less --RAW-CONTROL-CHARS -X -F -K -
 You can test your new APM webtop now by browsing to:
 ${fgLtWhi}
-  ${fgLtYel}https://$webtopvip{fgLtWhi}
+  ${fgLtYel}https://$webtopvip${fgLtWhi}
 
   username: <any>
   password: <any>

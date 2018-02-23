@@ -1,4 +1,8 @@
 # Changelog
+## [1.0.10] 20180223
+### Changed
+- Formatting and typos thanks to the eagle eye of Mr. Brad Otlin!
+- Corrected script version variable and moved it to the top
 ## [1.0.9] 20180222
 ### Added
 - Apply APM policy after creation
