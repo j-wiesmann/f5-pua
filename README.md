@@ -31,6 +31,7 @@ When started, `build_pua.sh` or `build_pua_offline.sh` both check for the existe
 Additionally, most of the variables set in the top of `pua_config.sh` and `pua_config_offline.sh` may be overridden by this file.
 
 # Instructions
+A full guide is available at [PUA Solution Install Guide.docx](https://raw.githubusercontent.com/billchurch/f5-pua/master/docs/PUA%20Solution%20Install%20Guide.docx)
 
 - Configure a BIG-IP with VLAN and self IP
 - download [build_pua_offline.zip](https://github.com/billchurch/f5-pua/blob/master/build_pua.zip) and copy to BIG-IP
