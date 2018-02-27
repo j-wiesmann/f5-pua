@@ -142,11 +142,11 @@ checkoutput() {
     #failure
     tput bel;tput bel;tput bel;tput bel
     echo "${fgLtRed}[FAILED]${fgLtWhi}"
-    echo "\n\n"
+    echo -e "\n\n"
     echo "Previous command failed in ${script_path}/${scriptname} with error level: ${result} on line: $prevline:"
     echo
     sed "${prevline}q;d" ${script_path}/${scriptname} | tr -d '[:space:]'
-    echo "\n\n"
+    echo -e "\n\n"
     echo "STDOUT/STDERR:"
     echo ${output}
     exit 255
@@ -322,7 +322,7 @@ checkProvision() {
       echo "${fgLtGrn}[OK]${fgLtWhi}"
     else
       tput bel;tput bel;tput bel;tput bel
-      echo "\n\n"
+      echo -e "\n\n"
       echo "${fgLtRed}ERROR:${fgLtWhi} Refusing to run until modules are provisioned. Please provision LTM APM and ILX"
       echo "and run script again."
       echo
