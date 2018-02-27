@@ -6,7 +6,7 @@
 # Bill Church - bill@f5.com
 #
 # v1.0.10
-scriptversion="1.0.10"
+scriptversion="1.0.11"
 
 # If you want to run this in non-interactive mode, download, modify and place pua_config.sh in the
 # same folder as this script on the BIG-IP.
@@ -129,7 +129,7 @@ ${fgLtYel}RADIUS Testing${fgLtWhi}
 The BIG-IP administrative interface can be configured to authenticate against itself for testing. This will allow “admin” and anyone using the test account “testuser” with ANY password to authenticate as a guest to the GUI or SSH. If you enable this option, instructions will be provided at the end of this script for testing
 INTRODUCTION
 echo
-echo "Press any key to contine, or CTRL-C to cancel."
+echo "Press any key to continue, or CTRL-C to cancel."
 read -n1 NUL
 echo
 }
@@ -145,7 +145,7 @@ checkoutput() {
     echo "\n\n"
     echo "Previous command failed in ${script_path}/${scriptname} with error level: ${result} on line: $prevline:"
     echo
-    sed "${prevline}q;d" ${script_path}/${scriptname} | awk '{$1=$1};1'
+    sed "${prevline}q;d" ${script_path}/${scriptname} | tr -d '[:space:]'
     echo "\n\n"
     echo "STDOUT/STDERR:"
     echo ${output}
@@ -167,6 +167,7 @@ getvip() {
         echo -n -e "and press ENTER [${fgLtCya}$defaultip${fgLtWhi}]: "
       fi
       read servicenamevip
+      servicenamevip="$(echo -e "${servicenamevip}" | tr -d '[:space:]')"
       if [[ ("$servicenamevip" == "") && ("$defaultip" != "") ]]; then
         servicenamevip=$defaultip
       fi
@@ -436,12 +437,12 @@ clientsslProfile () {
   fi
   if [[ !("$sampleca" == "y") ]]; then
     echo
-    echo "${fgLtYel}Sample Certificate Authority{fgLtWhi}"
+    echo "${fgLtYel}Sample Certificate Authority${fgLtWhi}"
     echo "============================"
     echo
     echo "A sample CA is available for testing. This should be implemented on non-production systems only."
     echo
-    echo -n "Would you like to download a sample CA for testing (Y/n)? "
+    echo -n "Would you like to install a sample CA for testing (Y/n)? "
     read -n1 sampleca
   fi
   echo

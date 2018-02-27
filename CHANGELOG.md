@@ -1,4 +1,7 @@
 # Changelog
+## [1.0.11] 20180227
+### Added
+- Check for and trim leading/trailing whitespace/tab in IP address input
 ## [1.0.10] 20180223
 ### Changed
 - Formatting and typos thanks to the eagle eye of Mr. Brad Otlin!
