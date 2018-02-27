@@ -6,7 +6,7 @@
 # Bill Church - bill@f5.com
 #
 # v1.0.10
-scriptversion="1.0.11"
+scriptversion="1.0.12"
 
 # If you want to run this in non-interactive mode, download, modify and place pua_config.sh in the
 # same folder as this script on the BIG-IP.
@@ -396,7 +396,7 @@ RADIUSINFO
       echo
     fi
   fi
-  if [ "$radiusconfig" == "y" ]; then
+  if [[ ("${radiusconfig}" == "y") ]]; then
     echo
     echo -n "Modifying BIG-IP for RADIUS authentication against itself... "
     cat >$workingdir/radius.tcl <<RADIUS
@@ -413,8 +413,9 @@ RADIUS
     result="$?" 2>&1
     prevline=$(($LINENO-2))
     checkoutput
-    echo
-    fold -s -w $cols <<RADIUSSUMMARY | less --RAW-CONTROL-CHARS -X -F -K -
+    if [[ !("${disabletest}" == "y") ]]; then
+      echo
+      fold -s -w $cols <<RADIUSSUMMARY | less --RAW-CONTROL-CHARS -X -F -K -
 You can test WebSSH2 and Ephemeral authentication without APM configuration now by browsing to:
 ${fgLtWhi}
   ${fgLtYel}https://$webssh2vip:2222/ssh/host/$mgmtip${fgLtWhi}
@@ -423,9 +424,25 @@ ${fgLtWhi}
   password: anypassword
 
 This will allow anyone using the username testuser to log in with any password as a guest
-
 RADIUSSUMMARY
+    fi
   fi
+
+  if [[ ("${disabletest}" == "y") ]]; then
+    echo
+    fold -s -w $cols <<SSHTEST | less --RAW-CONTROL-CHARS -X -F -K -
+You can test WebSSH2 and Ephemeral authentication without APM configuration now by browsing to:
+${fgLtWhi}
+  ${fgLtYel}https://$webssh2vip:2222/ssh/host/$mgmtip${fgLtWhi}
+
+  username: <valid BIG-IP user>
+  password: <valid password>
+
+This will allow anyone with a valid account and terminal to log into the BIG-IP over ssh. Note: by
+default "admin" does not have ssh access.
+SSHTEST
+  fi
+
 }
 
 clientsslProfile () {
@@ -596,10 +613,17 @@ checkoutput
 
 echo
 echo -n "Creating ephemeral_config data group... "
-output=$((tmsh create ltm data-group internal ephemeral_config { records add { DEBUG { data 2 } DEBUG_PASSWORD { data 1 } RADIUS_SECRET { data radius_secret } RADIUS_TESTMODE { data 1 } RADIUS_TESTUSER { data testuser } ROTATE { data 0 } pwrulesLen { data 8 } pwrulesLwrCaseMin { data 1 } pwrulesNumbersMin { data 1 } pwrulesPunctuationMin { data 1 } pwrulesUpCaseMin { data 1 } } type string }) 2>&1)
-result="$?" 2>&1
-prevline=$(($LINENO-2))
-checkoutput
+if [[ ("${disabletest}" == "y") ]]; then
+  output=$((tmsh create ltm data-group internal ephemeral_config { records add { DEBUG { data 0 } DEBUG_PASSWORD { data 0 } RADIUS_SECRET { data radius_secret } RADIUS_TESTMODE { data 0 } ROTATE { data 0 } pwrulesLen { data 8 } pwrulesLwrCaseMin { data 1 } pwrulesNumbersMin { data 1 } pwrulesPunctuationMin { data 1 } pwrulesUpCaseMin { data 1 } } type string }) 2>&1)
+  result="$?" 2>&1
+  prevline=$(($LINENO-2))
+  checkoutput
+else
+  output=$((tmsh create ltm data-group internal ephemeral_config { records add { DEBUG { data 2 } DEBUG_PASSWORD { data 1 } RADIUS_SECRET { data radius_secret } RADIUS_TESTMODE { data 1 } RADIUS_TESTUSER { data testuser } ROTATE { data 0 } pwrulesLen { data 8 } pwrulesLwrCaseMin { data 1 } pwrulesNumbersMin { data 1 } pwrulesPunctuationMin { data 1 } pwrulesUpCaseMin { data 1 } } type string }) 2>&1)
+  result="$?" 2>&1
+  prevline=$(($LINENO-2))
+  checkoutput
+fi
 
 echo
 echo -n "Creating ephemeral_LDAP_Bypass data group... "

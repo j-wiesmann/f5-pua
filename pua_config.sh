@@ -39,3 +39,9 @@ sampleca="y"
 # If you're downloading this file with Windows, make sure to run it through `dos2unix` or something to
 # fix the linefeed characters that Windows feels compelled to add. Best to use curl if you can
 # help it.
+
+# Disable creation of test accounts and additional debug. If this is being used for a production
+# system, this prevents the creation of test accounts. This could make troubleshooting more
+# difficult, so be sure you've run though this configuration before on a lab system.
+#
+disabletest="y"

@@ -1,4 +1,8 @@
 # Changelog
+## [1.0.12] 20180227
+### Added
+- Option to disable test account and enhanced logging with disabletest=y in `pua_config.sh`
+# Changelog
 ## [1.0.11] 20180227
 ### Added
 - Check for and trim leading/trailing whitespace/tab in IP address input
