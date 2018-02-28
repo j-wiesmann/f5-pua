@@ -1,4 +1,8 @@
 # Changelog
+## [1.0.13] 20180228
+### Changed
+- ephemeral_auth package updated to 0.2.10
+# Changelog
 ## [1.0.12] 20180227
 ### Added
 - Option to disable test account and enhanced logging with disabletest=y in `pua_config.sh`

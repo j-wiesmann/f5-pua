@@ -32,5 +32,4 @@ tar -cvzf - -T ARCHIVE.LIST | base64 >> build_pua_offline.sh
 zip build_pua_offline.zip build_pua_offline.sh
 zip build_pua.zip build_pua.sh
 cp build_pua.zip build_pua_offline.zip ${script_path}/..
-cp build_pua_offline.sh ${script_path}/bin
-
+cp build_pua_offline.sh ${script_path}/../bin
