@@ -1,4 +1,9 @@
 # Changelog
+## [1.0.14] 20180319
+### Changed
+- ephemeral_auth package updated to 0.2.13
+### Fixed
+- Typo in build_pua*.sh #2
 ## [1.0.13] 20180228
 ### Changed
 - ephemeral_auth package updated to 0.2.10
