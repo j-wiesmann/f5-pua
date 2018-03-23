@@ -1,4 +1,8 @@
 # Changelog
+## [1.0.15] TBD
+### Changed
+- Attempt to flush buffer before first key read... Minor.
+
 ## [1.0.14] 20180319
 ### Changed
 - ephemeral_auth package updated to 0.2.13

@@ -9,7 +9,7 @@
 scriptversion="1.0.14"
 
 # If you want to run this in non-interactive mode, download, modify and place pua_config.sh in the
-# same folder as this script on the BIG-IP.
+# same folder as this script on the BIG-IP.ni
 
 shopt -s nocasematch
 
@@ -171,6 +171,7 @@ getvip() {
       if [[ ("$servicenamevip" == "") && ("$defaultip" != "") ]]; then
         servicenamevip=$defaultip
       fi
+      read -t 1 -n 10000 discard
       echo
       echo -n -e "You typed ${fgLtCya}$servicenamevip${fgLtWhi}, is that correct (Y/n)? "
       read -n1 yesno
