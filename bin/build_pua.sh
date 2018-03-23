@@ -5,8 +5,7 @@
 #
 # Bill Church - bill@f5.com
 #
-# v1.0.13
-scriptversion="1.0.14"
+scriptversion="1.0.15"
 
 # If you want to run this in non-interactive mode, download, modify and place pua_config.sh in the
 # same folder as this script on the BIG-IP.ni
