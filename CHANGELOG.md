@@ -1,4 +1,7 @@
 # Changelog
+## [1.0.15.2] 20180509
+### Changed
+- Disable requirement for LTM provisioning
 ## [1.0.15.1] 20180509
 ### Changed
 - Set pua_webtop-clientssl handshake timeout to 120. Prevents handshake timeouts when CAC/PIV/SmartCard is used and user takes too long to enter their PIN.
