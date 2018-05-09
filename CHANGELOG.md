@@ -1,4 +1,7 @@
 # Changelog
+## [1.0.15.1] 20180509
+### Changed
+- Set pua_webtop-clientssl handshake timeout to 120. Prevents handshake timeouts when CAC/PIV/SmartCard is used and user takes too long to enter their PIN.
 ## [1.0.15] 20180404
 ### Changed
 - Attempt to flush buffer before first key read... Minor.

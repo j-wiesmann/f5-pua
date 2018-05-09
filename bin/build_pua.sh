@@ -1,14 +1,14 @@
 #!/bin/bash
 # Filename: build_pua.sh
 #
-# Builds out a reference PUA deployment on a BIG-IP running TMOS 13.1.0.2
+# Builds out a reference PUA deployment on a BIG-IP running TMOS 13.1.0.x
 #
 # Bill Church - bill@f5.com
 #
-scriptversion="1.0.15"
+scriptversion="1.0.15.1"
 
 # If you want to run this in non-interactive mode, download, modify and place pua_config.sh in the
-# same folder as this script on the BIG-IP.ni
+# same folder as this script on the BIG-IP.
 
 shopt -s nocasematch
 
@@ -476,7 +476,7 @@ clientsslProfile () {
     checkoutput
     echo
     echo -n "Creating pua_webtop-clientssl profile with CA ${fgLtCya}${samplecafname}${fgLtWhi} "
-    output=$((tmsh create ltm profile client-ssl pua_webtop-clientssl defaults-from clientssl ca-file ${samplecafname}.crt client-cert-ca ${samplecafname}.crt) 2>&1)
+    output=$((tmsh create ltm profile client-ssl pua_webtop-clientssl defaults-from clientssl handshake-timeout 120 ca-file ${samplecafname}.crt client-cert-ca ${samplecafname}.crt) 2>&1)
     result="$?" 2>&1
     prevline=$(($LINENO-2))
     checkoutput
