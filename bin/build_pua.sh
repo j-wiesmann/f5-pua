@@ -5,7 +5,7 @@
 #
 # Bill Church - bill@f5.com
 #
-scriptversion="1.0.15.1"
+scriptversion="1.0.15.2"
 
 # If you want to run this in non-interactive mode, download, modify and place pua_config.sh in the
 # same folder as this script on the BIG-IP.
@@ -32,7 +32,7 @@ apmpolicyfname=profile-pua_webtop_policy.conf.tar.gz
 apmpolicydisplayname="sample_pua_policy"
 ilxarchivedir=/var/ilx/workspaces/Common/archive
 provlevel=nominal
-modulesrequired="apm ltm ilx"
+modulesrequired="apm ilx"
 configfile="pua_config.sh"
 cols=$(tput cols)
 
