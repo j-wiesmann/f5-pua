@@ -768,7 +768,7 @@ checkoutput
 
 echo
 echo -n "Creating Webtop Virtual Server... "
-output=$((tmsh create ltm virtual pua_webtop { destination $webtopvip:443 ip-protocol tcp mask 255.255.255.255 profiles add { http { } ppp { } pua-connectivity pua_webtop-clientssl { context clientside } rba { } rewrite-portal { } ${apmpolicydisplayname} { } serverssl-insecure-compatible { context serverside } tcp { } websso { } } rules { $ephemeralilxplugin/APM_ephemeral_auth } source 0.0.0.0/0 }) 2>&1)
+output=$((tmsh create ltm virtual pua_webtop { destination $webtopvip:443 ip-protocol tcp mask 255.255.255.255 profiles add { http { } ppp { } pua-connectivity pua_webtop-clientssl { context clientside } rba { } rewrite-portal { } ${apmpolicydisplayname} { } serverssl-insecure-compatible { context serverside } f5-tcp-lan { } webacceleration { } httpcompression { } websso { } } rules { $ephemeralilxplugin/APM_ephemeral_auth } source 0.0.0.0/0 }) 2>&1)
 #output=$((tmsh create ltm virtual pua_webtop { destination $webtopvip:443 ip-protocol tcp mask 255.255.255.255 profiles add { http rewrite-portal tcp { } pua-connectivity { context clientside } pua_webtop-clientssl { context clientside } serverssl-insecure-compatible { context serverside } } rules { $ephemeralilxplugin/APM_ephemeral_auth } source 0.0.0.0/0 }) 2>&1)
 result="$?" 2>&1
 prevline=$(($LINENO-2))
